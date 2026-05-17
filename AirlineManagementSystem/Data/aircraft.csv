@@ -1,0 +1,6 @@
+RegistrationNumber,AirlineICAO,Model,Manufacturer,TotalSeats,BusinessSeats,EconomySeats,ManufacturingYear,Status
+A4O-AA,OMAE,Boeing 737,Boeing,150,20,130,2018,Active
+A6-ENA,UAEU,Boeing 777,Boeing,350,70,280,2019,Active
+A7-BAA,QATL,Airbus A380,Airbus,500,100,400,2020,Active
+G-XWBA,BAWE,Airbus A350,Airbus,300,50,250,2017,Active
+N100AN,AALA,Boeing 787,Boeing,240,40,200,2016,UnderMaintenance

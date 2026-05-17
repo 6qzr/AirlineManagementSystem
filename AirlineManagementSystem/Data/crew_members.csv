@@ -1,0 +1,6 @@
+EmployeeID,FullName,Role,Nationality,LicenseNumber,AirlineICAO,YearsOfExperience,AvailabilityStatus
+CR00001,Khalid Al Amri,Pilot,Omani,LIC-OM-001,OMAE,15,Available
+CR00002,Noor Al Habsi,CoPilot,Omani,LIC-OM-002,OMAE,8,Available
+CR00003,Mohammed Al Farsi,CabinCrew,Omani,,OMAE,5,Available
+CR00004,Emma Johnson,Pilot,British,LIC-GB-001,BAWE,20,Available
+CR00005,Ali Hassan,GroundStaff,Qatari,,QATL,3,Unavailable

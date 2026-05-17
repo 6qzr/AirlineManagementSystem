@@ -1,0 +1,6 @@
+PassengerID,FullName,DateOfBirth,Nationality,PassportNumber,Email,Phone,RegistrationDate,LoyaltyPoints,TierStatus,Password,FailedLoginAttempts,LockoutUntil,LastLoginDate
+P00001,Ahmed Al Rashdi,1990-04-15,Omani,OM1234567,ahmed@email.com,+96891234567,2025-01-10T09:00:00,1200,Silver,Pass@1234,0,,
+P00002,Sara Al Balushi,1995-07-22,Omani,OM2345678,sara@email.com,+96892345678,2025-02-14T10:00:00,300,Bronze,Pass@1234,0,,
+P00003,James Smith,1988-11-03,British,GB3456789,james@email.com,+447911123456,2025-03-01T08:30:00,5500,Gold,Pass@1234,0,,
+P00004,Fatima Al Zaabi,1992-09-18,Emirati,AE4567890,fatima@email.com,+97150123456,2025-03-20T11:00:00,12000,Platinum,Pass@1234,0,,
+P00005,John Carter,1985-01-30,American,US5678901,john@email.com,+12125551234,2025-04-05T14:00:00,0,Bronze,Pass@1234,0,,

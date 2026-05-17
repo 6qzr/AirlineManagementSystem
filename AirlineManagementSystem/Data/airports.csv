@@ -1,0 +1,6 @@
+IATACode,FullName,City,Country,TimeZoneOffset
+MCT,Muscat International Airport,Muscat,Oman,4.0
+DXB,Dubai International Airport,Dubai,UAE,4.0
+LHR,Heathrow Airport,London,UK,0.0
+JFK,John F Kennedy International Airport,New York,USA,-5.0
+DOH,Hamad International Airport,Doha,Qatar,3.0

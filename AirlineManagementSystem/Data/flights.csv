@@ -1,0 +1,6 @@
+FlightNumber,OriginAirportCode,DestinationAirportCode,AirlineICAO,AircraftRegNumber,ScheduledDeparture,ScheduledArrival,ActualDeparture,ActualArrival,Status,AvailableBusinessSeats,AvailableEconomySeats,BasePrice
+WY101,MCT,DXB,OMAE,A4O-AA,2026-05-20T08:00:00,2026-05-20T10:00:00,,,Scheduled,20,130,150.00
+EK202,DXB,LHR,UAEU,A6-ENA,2026-05-20T14:00:00,2026-05-20T18:30:00,,,Scheduled,70,280,500.00
+QR303,DOH,JFK,QATL,A7-BAA,2026-05-21T09:00:00,2026-05-21T15:00:00,,,Scheduled,100,400,800.00
+BA404,LHR,JFK,BAWE,G-XWBA,2026-05-22T11:00:00,2026-05-22T14:00:00,,,Boarding,50,250,750.00
+WY505,MCT,DOH,OMAE,A4O-AA,2026-05-23T07:00:00,2026-05-23T08:30:00,,,Delayed,18,120,120.00
