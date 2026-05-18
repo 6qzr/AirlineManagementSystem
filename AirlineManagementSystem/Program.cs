@@ -210,9 +210,14 @@
         public static List<ErrorLog> ErrorLogs = new List<ErrorLog>();
     }
 
-    // Read CSVs
+    /* 
+     * ============== Read & Save CSVs ==============
+     */
     static class CsvHelper
     {
+        /* 
+        * ============== Read CSVs ==============
+        */
         //Reads airports.csv
         public static void LoadAirports()
         {
@@ -557,6 +562,366 @@
                 }
             }
         }
+
+        /* 
+        * ============== Save CSVs ==============
+        */
+        // Save Airport
+        public static void SaveAirport()
+        {
+            string tempFile = Constants.AirportsFile + ".tmp";
+
+            using (StreamWriter sw = new StreamWriter(tempFile))
+            {
+                // Write Header
+                sw.WriteLine("IATACode,FullName,City,Country,TimeZoneOffset");
+
+                // Loop through DataStore and write each record
+                foreach (var x in DataStore.Airports)
+                {
+                    Airport f = x.Value;
+                    sw.WriteLine($"{f.IATACode}," +
+                                 $"{f.FullName}," +
+                                 $"{f.City}," +
+                                 $"{f.Country}," +
+                                 $"{f.TimeZoneOffset}");
+                }
+            }
+
+            File.Replace(tempFile, Constants.AirportsFile, null);
+
+        }
+
+        // Save Airlines
+        public static void SaveAirlines()
+        {
+            string tempFile = Constants.AirlinesFile + ".tmp";
+
+            using (StreamWriter sw = new StreamWriter(tempFile))
+            {
+                sw.WriteLine("ICAOCode,Name,RegistrationCountry,ContactInfo");
+
+                foreach (var x in DataStore.Airlines)
+                {
+                    Airline a = x.Value;
+                    sw.WriteLine($"{a.ICAOCode}," +
+                                 $"{a.Name}," +
+                                 $"{a.RegistrationCountry}," +
+                                 $"{a.ContactInfo}");
+                }
+            }
+
+            File.Replace(tempFile, Constants.AirlinesFile, null);
+        }
+
+        // Save Aircraft
+        public static void SaveAircraft()
+        {
+            string tempFile = Constants.AircraftsFile + ".tmp";
+
+            using (StreamWriter sw = new StreamWriter(tempFile))
+            {
+                sw.WriteLine("RegistrationNumber,AirlineICAO,Model,Manufacturer,TotalSeats,BusinessSeats,EconomySeats,ManufacturingYear,Status");
+
+                foreach (var x in DataStore.Aircrafts)
+                {
+                    Aircraft a = x.Value;
+                    sw.WriteLine($"{a.RegistrationNumber}," +
+                                 $"{a.AirlineICAO}," +
+                                 $"{a.Model}," +
+                                 $"{a.Manufacturer}," +
+                                 $"{a.TotalSeats}," +
+                                 $"{a.BusinessSeats}," +
+                                 $"{a.EconomySeats}," +
+                                 $"{a.ManufacturingYear}," +
+                                 $"{a.Status}");
+                }
+            }
+
+            File.Replace(tempFile, Constants.AircraftsFile, null);
+        }
+
+        // Save Flights
+        public static void SaveFlights()
+        {
+            string tempFile = Constants.FlightsFile + ".tmp";
+           
+            using (StreamWriter sw = new StreamWriter(tempFile))
+            {
+                // Write Header
+                sw.WriteLine("FlightNumber,OriginAirportCode,DestinationAirportCode,AirlineICAO,AircraftRegNumber,ScheduledDeparture,ScheduledArrival,ActualDeparture,ActualArrival,Status,AvailableBusinessSeats,AvailableEconomySeats,BasePrice");
+
+                // Loop through DataStore and write each record
+                foreach (var x in DataStore.Flights)
+                {
+                    Flight f = x.Value;
+                    sw.WriteLine($"{f.FlightNumber}," +
+                                 $"{f.OriginAirportCode}," +
+                                 $"{f.DestinationAirportCode}," +
+                                 $"{f.AirlineICAO}," +
+                                 $"{f.AircraftRegNumber}," +
+                                 $"{f.ScheduledDeparture.ToString("yyyy-MM-ddTHH:mm:ss")}," +
+                                 $"{f.ScheduledArrival.ToString("yyyy-MM-ddTHH:mm:ss")}," +
+                                 $"{(f.ActualDeparture.HasValue ? f.ActualDeparture.Value.ToString("yyyy-MM-ddTHH:mm:ss") : "")}," +
+                                 $"{(f.ActualArrival.HasValue ? f.ActualArrival.Value.ToString("yyyy-MM-ddTHH:mm:ss") : "")}," +
+                                 $"{f.Status}," +
+                                 $"{f.AvailableBusinessSeats}," +
+                                 $"{f.AvailableEconomySeats}," +
+                                 $"{f.BasePrice}");
+                }
+            }
+
+            File.Replace(tempFile, Constants.FlightsFile, null);
+
+        }
+
+        // Save Passengers
+        public static void SavePassengers()
+        {
+            string tempFile = Constants.PassengersFile + ".tmp";
+
+            using (StreamWriter sw = new StreamWriter(tempFile))
+            {
+                sw.WriteLine("PassengerID,FullName,DateOfBirth,Nationality,PassportNumber,Email,Phone,RegistrationDate,LoyaltyPoints,TierStatus,Password,FailedLoginAttempts,LockoutUntil,LastLoginDate");
+
+                foreach (var x in DataStore.Passengers)
+                {
+                    Passenger p = x.Value;
+                    sw.WriteLine($"{p.PassengerID}," +
+                                 $"{p.FullName}," +
+                                 $"{p.DateOfBirth.ToString("yyyy-MM-dd")}," +
+                                 $"{p.Nationality}," +
+                                 $"{p.PassportNumber}," +
+                                 $"{p.Email}," +
+                                 $"{p.Phone}," +
+                                 $"{p.RegistrationDate.ToString("yyyy-MM-ddTHH:mm:ss")}," +
+                                 $"{p.LoyaltyPoints}," +
+                                 $"{p.TierStatus}," +
+                                 $"{p.Password}," +
+                                 $"{p.FailedLoginAttempts}," +
+                                 $"{(p.LockoutUntil.HasValue ? p.LockoutUntil.Value.ToString("yyyy-MM-ddTHH:mm:ss") : "")}," +
+                                 $"{(p.LastLoginDate.HasValue ? p.LastLoginDate.Value.ToString("yyyy-MM-ddTHH:mm:ss") : "")}");
+                }
+            }
+
+            File.Replace(tempFile, Constants.PassengersFile, null);
+        }
+
+        // Save Crew Members
+        public static void SaveCrewMembers()
+        {
+            string tempFile = Constants.CrewMembersFile + ".tmp";
+
+            using (StreamWriter sw = new StreamWriter(tempFile))
+            {
+                sw.WriteLine("EmployeeID,FullName,Role,Nationality,LicenseNumber,AirlineICAO,YearsOfExperience,IsAvailable");
+
+                foreach (var x in DataStore.CrewMembers)
+                {
+                    CrewMember c = x.Value;
+                    sw.WriteLine($"{c.EmployeeID}," +
+                                 $"{c.FullName}," +
+                                 $"{c.Role}," +
+                                 $"{c.Nationality}," +
+                                 $"{c.LicenseNumber}," +
+                                 $"{c.AirlineICAO}," +
+                                 $"{c.YearsOfExperience}," +
+                                 $"{c.IsAvailable.ToString().ToLower()}");
+                }
+            }
+
+            File.Replace(tempFile, Constants.CrewMembersFile, null);
+        }
+
+        // Save Flight Crew
+        public static void SaveFlightCrew()
+        {
+            string tempFile = Constants.FlightCrewFile + ".tmp";
+
+            using (StreamWriter sw = new StreamWriter(tempFile))
+            {
+                sw.WriteLine("FlightNumber,EmployeeID,AssignedDate");
+
+                foreach (FlightCrew fc in DataStore.FlightCrew)
+                {
+                    sw.WriteLine($"{fc.FlightNumber}," +
+                                 $"{fc.EmployeeID}," +
+                                 $"{fc.AssignedDate.ToString("yyyy-MM-ddTHH:mm:ss")}");
+                }
+            }
+
+            File.Replace(tempFile, Constants.FlightCrewFile, null);
+        }
+
+        // Save Tickets
+        public static void SaveTickets()
+        {
+            string tempFile = Constants.TicketsFile + ".tmp";
+
+            using (StreamWriter sw = new StreamWriter(tempFile))
+            {
+                sw.WriteLine("TicketID,PassengerID,FlightNumber,SeatClass,SeatNumber,BookingDate,Status,FinalPrice,LoyaltyPointsEarned,PromoCode");
+
+                foreach (var x in DataStore.Tickets)
+                {
+                    Ticket t = x.Value;
+                    sw.WriteLine($"{t.TicketID}," +
+                                 $"{t.PassengerID}," +
+                                 $"{t.FlightNumber}," +
+                                 $"{t.SeatClass}," +
+                                 $"{t.SeatNumber}," +
+                                 $"{t.BookingDate.ToString("yyyy-MM-ddTHH:mm:ss")}," +
+                                 $"{t.Status}," +
+                                 $"{t.FinalPrice}," +
+                                 $"{t.LoyaltyPointsEarned}," +
+                                 $"{t.PromoCode}");
+                }
+            }
+
+            File.Replace(tempFile, Constants.TicketsFile, null);
+        }
+
+        // Save Baggage
+        public static void SaveBaggage()
+        {
+            string tempFile = Constants.BaggagesFile + ".tmp";
+
+            using (StreamWriter sw = new StreamWriter(tempFile))
+            {
+                sw.WriteLine("BaggageID,TicketID,WeightKg,BaggageType,Status");
+
+                foreach (Baggage b in DataStore.Baggages)
+                {
+                    sw.WriteLine($"{b.BaggageID}," +
+                                 $"{b.TicketID}," +
+                                 $"{b.WeightKg}," +
+                                 $"{b.Type}," +
+                                 $"{b.Status}");
+                }
+            }
+
+            File.Replace(tempFile, Constants.BaggagesFile, null);
+        }
+
+        // Save Promotions
+        public static void SavePromotions()
+        {
+            string tempFile = Constants.PromotionsFile + ".tmp";
+
+            using (StreamWriter sw = new StreamWriter(tempFile))
+            {
+                sw.WriteLine("PromoCode,DiscountPercentage,StartDate,EndDate,MaxUses,CurrentUseCount,ApplicableClass,IsActive");
+
+                foreach (var x in DataStore.Promotions)
+                {
+                    Promotion p = x.Value;
+                    sw.WriteLine($"{p.PromoCode}," +
+                                 $"{p.DiscountPercentage}," +
+                                 $"{p.StartDate.ToString("yyyy-MM-dd")}," +
+                                 $"{p.EndDate.ToString("yyyy-MM-dd")}," +
+                                 $"{p.MaxUses}," +
+                                 $"{p.CurrentUseCount}," +
+                                 $"{p.ApplicableClass}," +
+                                 $"{p.IsActive.ToString().ToLower()}");
+                }
+            }
+
+            File.Replace(tempFile, Constants.PromotionsFile, null);
+        }
+
+        // Save Admins
+        public static void SaveAdmins()
+        {
+            string tempFile = Constants.AdminsFile + ".tmp";
+
+            using (StreamWriter sw = new StreamWriter(tempFile))
+            {
+                sw.WriteLine("AdminID,FullName,Email,Password,FailedLoginAttempts,LockoutUntil,LastLoginDate");
+
+                foreach (var x in DataStore.Admins)
+                {
+                    Admin a = x.Value;
+                    sw.WriteLine($"{a.AdminID}," +
+                                 $"{a.FullName}," +
+                                 $"{a.Email}," +
+                                 $"{a.Password}," +
+                                 $"{a.FailedLoginAttempts}," +
+                                 $"{(a.LockoutUntil.HasValue ? a.LockoutUntil.Value.ToString("yyyy-MM-ddTHH:mm:ss") : "")}," +
+                                 $"{(a.LastLoginDate.HasValue ? a.LastLoginDate.Value.ToString("yyyy-MM-ddTHH:mm:ss") : "")}");
+                }
+            }
+
+            File.Replace(tempFile, Constants.AdminsFile, null);
+        }
+
+        // Save Loyalty Logs
+        public static void SaveLoyaltyLogs()
+        {
+            string tempFile = Constants.LoyaltyLogFile + ".tmp";
+
+            using (StreamWriter sw = new StreamWriter(tempFile))
+            {
+                sw.WriteLine("LogID,PassengerID,TicketID,PointsChanged,Reason,TransactionDate");
+
+                foreach (LoyaltyLog l in DataStore.LoyaltyLogs)
+                {
+                    sw.WriteLine($"{l.LogID}," +
+                                 $"{l.PassengerID}," +
+                                 $"{l.TicketID}," +
+                                 $"{l.PointsChanged}," +
+                                 $"{l.Reason}," +
+                                 $"{l.TransactionDate.ToString("yyyy-MM-ddTHH:mm:ss")}");
+                }
+            }
+
+            File.Replace(tempFile, Constants.LoyaltyLogFile, null);
+        }
+
+        // Save System Logs
+        public static void SaveSystemLogs()
+        {
+            string tempFile = Constants.SystemLogFile + ".tmp";
+
+            using (StreamWriter sw = new StreamWriter(tempFile))
+            {
+                sw.WriteLine("LogID,Timestamp,UserID,UserRole,ActionType,EntityAffected,Details");
+
+                foreach (SystemLog l in DataStore.SystemLogs)
+                {
+                    sw.WriteLine($"{l.LogID}," +
+                                 $"{l.Timestamp.ToString("yyyy-MM-ddTHH:mm:ss")}," +
+                                 $"{l.UserID}," +
+                                 $"{l.UserRole}," +
+                                 $"{l.ActionType}," +
+                                 $"{l.EntityAffected}," +
+                                 $"{l.Details}");
+                }
+            }
+
+            File.Replace(tempFile, Constants.SystemLogFile, null);
+        }
+
+        // Save Error Logs
+        public static void SaveErrorLogs()
+        {
+            string tempFile = Constants.ErrorLogFile + ".tmp";
+
+            using (StreamWriter sw = new StreamWriter(tempFile))
+            {
+                sw.WriteLine("LogID,Timestamp,ErrorMessage,StackTrace");
+
+                foreach (ErrorLog l in DataStore.ErrorLogs)
+                {
+                    sw.WriteLine($"{l.LogID}," +
+                                 $"{l.Timestamp.ToString("yyyy-MM-ddTHH:mm:ss")}," +
+                                 $"{l.ErrorMessage}," +
+                                 $"{l.StackTrace}");
+                }
+            }
+
+            File.Replace(tempFile, Constants.ErrorLogFile, null);
+        }
+
     }
 
     internal class Program
