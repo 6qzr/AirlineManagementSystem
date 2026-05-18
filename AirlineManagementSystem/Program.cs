@@ -3,7 +3,7 @@
     // Define all enums (based on attributes with multible fixed values)
     enum AircraftStatus {Active, UnderMaintenance, Retired}
     enum FlightStatus {Scheduled, Boarding, Departed, Arrived, Delayed, Cancelled}
-    enum LoyaltyTier { Bronze, Silver, Gold, Platinum}
+    enum LoyaltyTier {Bronze, Silver, Gold, Platinum}
     enum CrewMemberRole {Pilot, CoPilot, CabinCrew, GroundStaff}
     enum TicketSeatClass {Business, Economy}
     enum TicketStatus {Confirmed, Cancelled, CheckedIn, Boarded}
@@ -170,8 +170,47 @@
         public string StackTrace;
     }
 
-    internal class Program
+    // File Paths
+    static class Constants
     {
+        public const string AirportsFile = "Data\\airports.csv";
+        public const string AirlinesFile = "Data\\airlines.csv";
+        public const string AircraftFile = "Data\\aircraft.csv";
+        public const string FlightsFile = "Data\\flights.csv";
+        public const string PassengersFile = "Data\\passengers.csv";
+        public const string CrewMembersFile = "Data\\crew_members.csv";
+        public const string FlightCrewFile = "Data\\flight_crew.csv";
+        public const string TicketsFile = "Data\\tickets.csv";
+        public const string BaggageFile = "Data\\baggage.csv";
+        public const string PromotionsFile = "Data\\promotions.csv";
+        public const string AdminsFile = "Data\\admins.csv";
+        public const string LoyaltyLogFile = "Data\\loyalty_log.csv";
+        public const string SystemLogFile = "Data\\system_log.csv";
+        public const string ErrorLogFile = "Data\\error_log.csv";
+    }
+
+    static class DataStore
+    {
+        // Dictionaries: entities with primary keys
+        public static Dictionary<string, Airport> Airports = new Dictionary<string, Airport>();
+        public static Dictionary<string, Airline> Airlines = new Dictionary<string, Airline>();
+        public static Dictionary<string, Aircraft> Aircraft = new Dictionary<string, Aircraft>();
+        public static Dictionary<string, Flight> Flights = new Dictionary<string, Flight>();
+        public static Dictionary<string, Passenger> Passengers = new Dictionary<string, Passenger>();
+        public static Dictionary<string, CrewMember> CrewMembers = new Dictionary<string, CrewMember>();
+        public static Dictionary<string, Ticket> Tickets = new Dictionary<string, Ticket>();
+        public static Dictionary<string, Promotion> Promotions = new Dictionary<string, Promotion>();
+        public static Dictionary<string, Admin> Admins = new Dictionary<string, Admin>();
+
+        // Lists
+        public static List<Baggage> Baggage = new List<Baggage>();
+        public static List<LoyaltyLog> LoyaltyLogs = new List<LoyaltyLog>();
+        public static List<SystemLog> SystemLogs = new List<SystemLog>();
+        public static List<ErrorLog> ErrorLogs = new List<ErrorLog>();
+    }
+
+    internal class Program
+    {      
         static void Main(string[] args)
         {
             
