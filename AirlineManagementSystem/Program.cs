@@ -1,15 +1,17 @@
-﻿namespace AirlineManagementSystem
+﻿using System.Text.RegularExpressions;
+
+namespace AirlineManagementSystem
 {
     // Define all enums (based on attributes with multible fixed values)
-    enum AircraftStatus {Active, UnderMaintenance, Retired}
-    enum FlightStatus {Scheduled, Boarding, Departed, Arrived, Delayed, Cancelled}
-    enum LoyaltyTier {Bronze, Silver, Gold, Platinum}
-    enum CrewMemberRole {Pilot, CoPilot, CabinCrew, GroundStaff}
-    enum TicketSeatClass {Business, Economy}
-    enum TicketStatus {Confirmed, Cancelled, CheckedIn, Boarded}
-    enum BaggageType {Cabin, Hold, Oversized}
-    enum BaggageStatus {CheckedIn, Loaded, Lost, Delivered}
-    enum PromotionApplicableClass {Economy, Business, Both}
+    enum AircraftStatus { Active, UnderMaintenance, Retired }
+    enum FlightStatus { Scheduled, Boarding, Departed, Arrived, Delayed, Cancelled }
+    enum LoyaltyTier { Bronze, Silver, Gold, Platinum }
+    enum CrewMemberRole { Pilot, CoPilot, CabinCrew, GroundStaff }
+    enum TicketSeatClass { Business, Economy }
+    enum TicketStatus { Confirmed, Cancelled, CheckedIn, Boarded }
+    enum BaggageType { Cabin, Hold, Oversized }
+    enum BaggageStatus { CheckedIn, Loaded, Lost, Delivered }
+    enum PromotionApplicableClass { Economy, Business, Both }
 
     // Define all structs (based on the entities in the ERD)
     struct Flight
@@ -241,7 +243,7 @@
                     newAirport.City = record[2];
                     newAirport.Country = record[3];
                     newAirport.TimeZoneOffset = float.Parse(record[4]);
-                
+
                     //Store Flight
                     DataStore.Airports[newAirport.IATACode] = newAirport;
                 }
@@ -652,7 +654,7 @@
         public static void SaveFlights()
         {
             string tempFile = Constants.FlightsFile + ".tmp";
-           
+
             using (StreamWriter sw = new StreamWriter(tempFile))
             {
                 // Write Header
@@ -943,7 +945,7 @@
                 Console.Clear();
                 Console.ForegroundColor = ConsoleColor.Cyan;
                 Console.WriteLine("╔══════════════════════════════════════════╗");
-                Console.WriteLine("║                   Login                  ║");
+                Console.WriteLine("║                Login Page                ║");
                 Console.WriteLine("╚══════════════════════════════════════════╝");
                 Console.ResetColor();
 
@@ -1032,7 +1034,7 @@
 
                         //Add System Log
                         SystemLog log = new SystemLog();
-                        log.LogID = "SL" + (DataStore.SystemLogs.Count + 1).ToString("D5");
+                        log.LogID = "SL" + (DataStore.SystemLogs.Count + 1).ToString("D5"); // Padding - minimum 5 digits
                         log.Timestamp = DateTime.Now;
                         log.UserID = a.AdminID;
                         log.UserRole = "Admin";
@@ -1042,7 +1044,8 @@
                         DataStore.SystemLogs.Add(log);
                         CsvHelper.SaveSystemLogs();
 
-                        // AdminPortal.Show(a);
+
+                        // AdminPortal;
 
 
                         return; // success — exit login
@@ -1101,7 +1104,9 @@
                         DataStore.SystemLogs.Add(log);
                         CsvHelper.SaveSystemLogs();
 
-                        // PassengerPortal.Show(p);
+
+                        // PassengerPortal;
+
 
                         return; // success — exit login
                     }
@@ -1133,11 +1138,149 @@
                 }
             }
         }
+
+        public static void Register()
+        {
+            while (true)
+            {
+                Console.Clear();
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine("╔══════════════════════════════════════════╗");
+                Console.WriteLine("║            Registeration Page            ║");
+                Console.WriteLine("╚══════════════════════════════════════════╝");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.WriteLine("\n  [0] Back to Main Menu");
+                Console.Write("\n  Enter your name: ");
+                string name = Console.ReadLine();
+
+                if (name == "0") return;
+
+                Passenger? foundPassenger;
+
+                Console.Write("\n  Enter your date of birth (yyyy-MM-dd): ");
+                string dobInput = Console.ReadLine();
+                if (string.IsNullOrEmpty(dobInput))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Date of birth cannot be empty.");
+                    Console.ResetColor();
+                    continue; // restart the loop
+                }
+                // Parse safely
+                if (!DateTime.TryParse(dobInput, out DateTime DOB))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid date format. Use yyyy-MM-dd.");
+                    Console.ResetColor();
+                    continue; // restart the loop
+                }
+
+                Console.Write("\n  Enter your nationality: ");
+                string nationality = Console.ReadLine();
+                if (string.IsNullOrEmpty(nationality))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Nationality cannot be empty. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                Console.Write("\n  Enter your passport number: ");
+                string passport = Console.ReadLine();
+                // Check passport number uniqeness 
+                foundPassenger = DataStore.Passengers.Values
+                    .Cast<Passenger?>()
+                    .FirstOrDefault(p => p.Value.PassportNumber == passport);
+                if (foundPassenger != null)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Passport already exists. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue; // restart the loop
+                }
+
+                Console.Write("\n  Enter your email: ");
+                string email = Console.ReadLine();
+                // Check email uniqeness 
+                foundPassenger = DataStore.Passengers.Values
+                    .Cast<Passenger?>()
+                    .FirstOrDefault(p => p.Value.Email == email);
+                if (foundPassenger != null)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Email already exists. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue; // restart the loop
+                }
+
+                Console.Write("\n  Enter your phone: ");
+                string phone = Console.ReadLine();
+                if (string.IsNullOrEmpty(phone)) 
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Phone cannot be empty. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue; // restart the loop
+                }
+
+                Console.Write("\n  Enter your password: ");
+                string password = Console.ReadLine();
+                // Local function to check validity of the password
+                static bool IsValidPassword(string password)
+                {
+                    if (password.Length < Constants.MinPasswordLength) return false;
+                    if (!Regex.IsMatch(password, @"\d")) return false;           // at least one digit
+                    if (!Regex.IsMatch(password, @"[A-Z]")) return false;        // at least one uppercase
+                    if (!Regex.IsMatch(password, @"[!@#$%^&*()_+\-=\[\]]")) return false; // at least one special char
+                    return true;
+                }
+
+                if(!IsValidPassword(password))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Password must be with has digit, uppercase, special char, and length 8+ . Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue; // restart the loop
+                }
+
+                Passenger newPassenger = new Passenger();
+                newPassenger.PassengerID = "P" + (DataStore.Passengers.Count + 1).ToString("D5");
+                newPassenger.FullName = name;
+                newPassenger.Nationality = nationality;
+                newPassenger.DateOfBirth = DOB;
+                newPassenger.PassportNumber = passport;
+                newPassenger.Email = email;
+                newPassenger.Phone = phone;
+                newPassenger.RegistrationDate = DateTime.Now;
+                newPassenger.LoyaltyPoints = 0; // default
+                newPassenger.TierStatus = LoyaltyTier.Bronze; // default
+                newPassenger.Password = password;
+                newPassenger.FailedLoginAttempts = 0;
+                newPassenger.LockoutUntil = null;
+                newPassenger.LastLoginDate = null;
+
+                // Add to DataStore
+                DataStore.Passengers[newPassenger.PassengerID] = newPassenger;
+                CsvHelper.SavePassengers();
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"\n  Registration successful! Your ID is {newPassenger.PassengerID}. Press Enter to login.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+        }
     }
 
-
     internal class Program
-    {      
+    {
         static void Main(string[] args)
         {
             // Load all data from CSV files into memory
@@ -1158,7 +1301,7 @@
 
             // Main menu
             bool flag = false;
-            while (!flag) 
+            while (!flag)
             {
                 Console.Clear();
                 Console.ForegroundColor = ConsoleColor.Cyan;
@@ -1185,7 +1328,7 @@
                         AuthService.Login();
                         break;
                     case "2":
-                        //Register();
+                        AuthService.Register();
                         break;
                     case "0":
                         Console.ForegroundColor = ConsoleColor.Green;
@@ -1200,7 +1343,7 @@
                         Console.ReadLine();
                         break;
                 }
-            }      
+            }
         }
     }
 }
