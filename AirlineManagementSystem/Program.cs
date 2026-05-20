@@ -1045,7 +1045,7 @@ namespace AirlineManagementSystem
                         CsvHelper.SaveSystemLogs();
 
 
-                        // AdminPortal;
+                        AdminPortal.Show(a);
 
 
                         return; // success — exit login
@@ -1105,7 +1105,7 @@ namespace AirlineManagementSystem
                         CsvHelper.SaveSystemLogs();
 
 
-                        // PassengerPortal;
+                        PassengerPortal.Show(p);
 
 
                         return; // success — exit login
@@ -1289,6 +1289,156 @@ namespace AirlineManagementSystem
                 DataStore.SystemLogs.Add(log);
                 CsvHelper.SaveSystemLogs();
                 return;
+            }
+        }
+
+        public static void Logout(string userID, string fullName, string role)
+        {
+            SystemLog log = new SystemLog();
+            log.LogID = "SL" + (DataStore.SystemLogs.Count + 1).ToString("D5");
+            log.Timestamp = DateTime.Now;
+            log.UserID = userID;
+            log.UserRole = role;
+            log.ActionType = "Logout";
+            log.EntityAffected = "";
+            log.Details = $"{fullName} logged out.";
+            DataStore.SystemLogs.Add(log);
+            CsvHelper.SaveSystemLogs();
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("\n  Logged out successfully. Press Enter.");
+            Console.ResetColor();
+            Console.ReadLine();
+        }
+    }
+
+    static class AdminPortal
+    {
+        public static void Show(Admin admin)
+        {
+            while (true)
+            {
+                Console.Clear();
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine("╔══════════════════════════════════════════╗");
+                Console.WriteLine("║             Admin Dashboard              ║");
+                Console.WriteLine("╚══════════════════════════════════════════╝");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine($"\n  Welcome, {admin.FullName}");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n  [1] Manage Airports");
+                Console.WriteLine("  [2] Manage Airlines");
+                Console.WriteLine("  [3] Manage Aircraft");
+                Console.WriteLine("  [4] Manage Flights");
+                Console.WriteLine("  [5] Manage Passengers");
+                Console.WriteLine("  [6] Manage Crew Members");
+                Console.WriteLine("  [7] Manage Tickets");
+                Console.WriteLine("  [8] Manage Baggage");
+                Console.WriteLine("  [9] Manage Promotions");
+                Console.WriteLine("  [0] Logout");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Select an option: ");
+                Console.ResetColor();
+
+                switch (Console.ReadLine())
+                {
+                    case "1": 
+                        //AirportService.Show();
+                        break;
+                    case "2": 
+                        //AirlineService.Show(); 
+                        break;
+                    case "3": 
+                        //AircraftService.Show();
+                        break;
+                    case "4":
+                        //FlightService.Show();
+                        //break;
+                    case "5": 
+                        //PassengerService.Show();
+                        break;
+                    case "6": 
+                        //CrewService.Show();
+                        break;
+                    case "7": 
+                        //TicketService.Show();
+                        break;
+                    case "8": 
+                        //BaggageService.Show()
+                        break;
+                    case "9": 
+                        //PromotionService.Show();
+                        break;
+                    case "0": 
+                        AuthService.Logout(admin.AdminID, admin.FullName, "Admin");
+                        return;
+                    default:
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("\n  Invalid option. Press Enter to try again.");
+                        Console.ResetColor();
+                        Console.ReadLine();
+                        break;
+                }
+            }
+        }
+    }
+
+    static class PassengerPortal
+    {
+        public static void Show(Passenger passenger)
+        {
+            while (true)
+            {
+                Console.Clear();
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine("╔══════════════════════════════════════════╗");
+                Console.WriteLine("║            Passenger Portal              ║");
+                Console.WriteLine("╚══════════════════════════════════════════╝");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine($"\n  Welcome, {passenger.FullName}");
+                Console.WriteLine($"  Tier: {passenger.TierStatus} | Points: {passenger.LoyaltyPoints}");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n  [1] Browse & Search Flights");
+                Console.WriteLine("  [2] My Tickets");
+                Console.WriteLine("  [3] My Profile");
+                Console.WriteLine("  [0] Logout");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Select an option: ");
+                Console.ResetColor();
+
+                switch (Console.ReadLine())
+                {
+                    case "1": 
+                        //FlightService.Search(passenger);
+                        break;
+                    case "2": 
+                        //TicketService.ShowMyTickets(passenger);
+                        break;
+                    case "3": 
+                        //PassengerService.ShowProfile(passenger); 
+                        break;
+                    case "0": 
+                        AuthService.Logout(passenger.PassengerID, passenger.FullName, "Passenger"); 
+                        return;
+                    default:
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("\n  Invalid option. Press Enter to try again.");
+                        Console.ResetColor();
+                        Console.ReadLine();
+                        break;
+                }
             }
         }
     }
