@@ -931,11 +931,10 @@
     static class AuthService
     {
         /* 
-       * ============== Login ==============
-       */
+         * ============== Login ==============
+         */
         public static void Login()
         {
-            Console.WriteLine();
             Console.Clear();
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("╔══════════════════════════════════════════╗");
@@ -947,56 +946,139 @@
             Console.Write("\n  Enter your email: ");
             Console.ResetColor();
             string email = Console.ReadLine();
-            if (email != null)
+
+            if (string.IsNullOrEmpty(email))
             {
-                Console.ForegroundColor = ConsoleColor.Gray;
-                Console.Write("\n  Enter your password: ");
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\n  Email cannot be empty. Press Enter to try again.");
                 Console.ResetColor();
-                string password = Console.ReadLine();
-                if (password != null)
+                Console.ReadLine();
+                return;
+            }
+
+            Admin? foundAdmin = DataStore.Admins.Values
+                .FirstOrDefault(a => a.Email == email);
+
+            Passenger? foundPassenger = DataStore.Passengers.Values
+                .FirstOrDefault(p => p.Email == email);
+
+            if (!foundAdmin.HasValue && !foundPassenger.HasValue)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\n  No account found with that email. Press Enter to try again.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            // Lockout check
+            if (foundAdmin.HasValue && foundAdmin.Value.LockoutUntil.HasValue && foundAdmin.Value.LockoutUntil.Value > DateTime.Now)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"\n  Account locked. Try again after {foundAdmin.Value.LockoutUntil.Value.ToString("HH:mm:ss")}");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            if (foundPassenger.HasValue && foundPassenger.Value.LockoutUntil.HasValue && foundPassenger.Value.LockoutUntil.Value > DateTime.Now)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"\n  Account locked. Try again after {foundPassenger.Value.LockoutUntil.Value.ToString("HH:mm:ss")}");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("\n  Enter your password: ");
+            Console.ResetColor();
+            string password = Console.ReadLine();
+
+            if (string.IsNullOrEmpty(password))
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\n  Password cannot be empty. Press Enter to try again.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            if (foundAdmin.HasValue)
+            {
+                Admin a = foundAdmin.Value;
+                if (a.Password == password)
                 {
-                    // Use LINQ to find the logging in user either admin or passenger
-                    Admin? foundAdmin = DataStore.Admins.Values
-                        .FirstOrDefault(a => a.Email == email && a.Password == password);
+                    a.FailedLoginAttempts = 0;
+                    a.LockoutUntil = null;
+                    a.LastLoginDate = DateTime.Now;
+                    DataStore.Admins[a.AdminID] = a;
+                    CsvHelper.SaveAdmins();
 
-                    Passenger? foundPassenger = DataStore.Passengers.Values
-                        .FirstOrDefault(p => p.Email == email && p.Password == password);
-
-                    if (foundAdmin.HasValue)
-                    {
-                        // login success - route to admin portal
-                        
-                    }
-                    else if (foundPassenger.HasValue)
-                    {
-                        // login success - route to passenger portal
-                        
-                    }
-                    else
-                    {
-                        // User not found
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine("\n  Invalid credentials. Press Enter to try again.");
-                        Console.ResetColor();
-                        Console.ReadLine();
-                    }
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine($"\n  Welcome, {a.FullName}! Logged in as Admin.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    // AdminPortal.Show(a); → uncomment when built
                 }
                 else
                 {
-                    // Empty password
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("\n  Invalid password. Press Enter to try again.");
+                    a.FailedLoginAttempts++;
+                    if (a.FailedLoginAttempts >= Constants.MaxFailedLoginAttempts)
+                    {
+                        a.LockoutUntil = DateTime.Now.AddMinutes(Constants.LockoutMinutes);
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine($"\n  Too many failed attempts. Account locked for {Constants.LockoutMinutes} minutes.");
+                    }
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine($"\n  Wrong password. {Constants.MaxFailedLoginAttempts - a.FailedLoginAttempts} attempts remaining.");
+                    }
                     Console.ResetColor();
+                    DataStore.Admins[a.AdminID] = a;
+                    CsvHelper.SaveAdmins();
                     Console.ReadLine();
+                    return;
                 }
             }
-            else
+            else if (foundPassenger.HasValue)
             {
-                // Empty email
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("\n  Invalid email. Press Enter to try again.");
-                Console.ResetColor();
-                Console.ReadLine();
+                Passenger p = foundPassenger.Value;
+                if (p.Password == password)
+                {
+                    p.FailedLoginAttempts = 0;
+                    p.LockoutUntil = null;
+                    p.LastLoginDate = DateTime.Now;
+                    DataStore.Passengers[p.PassengerID] = p;
+                    CsvHelper.SavePassengers();
+
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine($"\n  Welcome, {p.FullName}! Logged in as Passenger.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    // PassengerPortal.Show(p); → uncomment when built
+                }
+                else
+                {
+                    p.FailedLoginAttempts++;
+                    if (p.FailedLoginAttempts >= Constants.MaxFailedLoginAttempts)
+                    {
+                        p.LockoutUntil = DateTime.Now.AddMinutes(Constants.LockoutMinutes);
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine($"\n  Too many failed attempts. Account locked for {Constants.LockoutMinutes} minutes.");
+                    }
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine($"\n  Wrong password. {Constants.MaxFailedLoginAttempts - p.FailedLoginAttempts} attempts remaining.");
+                    }
+                    Console.ResetColor();
+                    DataStore.Passengers[p.PassengerID] = p;
+                    CsvHelper.SavePassengers();
+                    Console.ReadLine();
+                    return;
+                }
             }
         }
     }
@@ -1026,7 +1108,6 @@
             bool flag = false;
             while (!flag) 
             {
-                Console.WriteLine();
                 Console.Clear();
                 Console.ForegroundColor = ConsoleColor.Cyan;
                 Console.WriteLine("╔══════════════════════════════════════════╗");
