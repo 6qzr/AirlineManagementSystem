@@ -1032,7 +1032,7 @@ namespace AirlineManagementSystem
                         Console.ResetColor();
                         Console.ReadLine();
 
-                        //Add System Log
+                        //Add Login System Log
                         SystemLog log = new SystemLog();
                         log.LogID = "SL" + (DataStore.SystemLogs.Count + 1).ToString("D5"); // Padding - minimum 5 digits
                         log.Timestamp = DateTime.Now;
@@ -1092,7 +1092,7 @@ namespace AirlineManagementSystem
                         Console.ResetColor();
                         Console.ReadLine();
 
-                        //Add System Log
+                        //Add Login System log
                         SystemLog log = new SystemLog();
                         log.LogID = "SL" + (DataStore.SystemLogs.Count + 1).ToString("D5");
                         log.Timestamp = DateTime.Now;
@@ -1164,16 +1164,18 @@ namespace AirlineManagementSystem
                 if (string.IsNullOrEmpty(dobInput))
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("\n  Date of birth cannot be empty.");
+                    Console.WriteLine("\n  Date of birth cannot be empty. Press Enter to try again.");
                     Console.ResetColor();
+                    Console.ReadLine();
                     continue; // restart the loop
                 }
                 // Parse safely
                 if (!DateTime.TryParse(dobInput, out DateTime DOB))
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("\n  Invalid date format. Use yyyy-MM-dd.");
+                    Console.WriteLine("\n  Invalid date format. Use yyyy-MM-dd. Press Enter to try again.");
                     Console.ResetColor();
+                    Console.ReadLine();
                     continue; // restart the loop
                 }
 
@@ -1235,8 +1237,8 @@ namespace AirlineManagementSystem
                 static bool IsValidPassword(string password)
                 {
                     if (password.Length < Constants.MinPasswordLength) return false;
-                    if (!Regex.IsMatch(password, @"\d")) return false;           // at least one digit
-                    if (!Regex.IsMatch(password, @"[A-Z]")) return false;        // at least one uppercase
+                    if (!Regex.IsMatch(password, @"\d")) return false; // at least one digit
+                    if (!Regex.IsMatch(password, @"[A-Z]")) return false; // at least one uppercase
                     if (!Regex.IsMatch(password, @"[!@#$%^&*()_+\-=\[\]]")) return false; // at least one special char
                     return true;
                 }
@@ -1274,6 +1276,18 @@ namespace AirlineManagementSystem
                 Console.WriteLine($"\n  Registration successful! Your ID is {newPassenger.PassengerID}. Press Enter to login.");
                 Console.ResetColor();
                 Console.ReadLine();
+
+                // Add Login System Log
+                SystemLog log = new SystemLog();
+                log.LogID = "SL" + (DataStore.SystemLogs.Count + 1).ToString("D5");
+                log.Timestamp = DateTime.Now;
+                log.UserID = newPassenger.PassengerID;
+                log.UserRole = "Passenger";
+                log.ActionType = "Register";
+                log.EntityAffected = $"Passenger {newPassenger.PassengerID}";
+                log.Details = $"{newPassenger.FullName} registered successfully.";
+                DataStore.SystemLogs.Add(log);
+                CsvHelper.SaveSystemLogs();
                 return;
             }
         }
