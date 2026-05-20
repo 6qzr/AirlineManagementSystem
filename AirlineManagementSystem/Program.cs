@@ -187,6 +187,10 @@
         public const string LoyaltyLogFile = "Data\\loyalty_log.csv";
         public const string SystemLogFile = "Data\\system_log.csv";
         public const string ErrorLogFile = "Data\\error_log.csv";
+
+        public const int MaxFailedLoginAttempts = 3;
+        public const int LockoutMinutes = 15;
+        public const int MinPasswordLength = 8;
     }
 
     static class DataStore
@@ -370,7 +374,7 @@
                     newCrewMember.LicenseNumber = record[4];
                     newCrewMember.AirlineICAO = record[5];
                     newCrewMember.YearsOfExperience = Convert.ToInt32(record[6]);
-                    newCrewMember.IsAvailable = bool.Parse(record[7]);
+                    newCrewMember.IsAvailable = record[7] == "Available";
 
                     DataStore.CrewMembers[newCrewMember.EmployeeID] = newCrewMember;
                 }
@@ -924,11 +928,146 @@
 
     }
 
+    static class AuthService
+    {
+        /* 
+       * ============== Login ==============
+       */
+        public static void Login()
+        {
+            Console.WriteLine();
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("╔══════════════════════════════════════════╗");
+            Console.WriteLine("║                   Login                  ║");
+            Console.WriteLine("╚══════════════════════════════════════════╝");
+            Console.ResetColor();
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("\n  Enter your email: ");
+            Console.ResetColor();
+            string email = Console.ReadLine();
+            if (email != null)
+            {
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Enter your password: ");
+                Console.ResetColor();
+                string password = Console.ReadLine();
+                if (password != null)
+                {
+                    // Use LINQ to find the logging in user either admin or passenger
+                    Admin? foundAdmin = DataStore.Admins.Values
+                        .FirstOrDefault(a => a.Email == email && a.Password == password);
+
+                    Passenger? foundPassenger = DataStore.Passengers.Values
+                        .FirstOrDefault(p => p.Email == email && p.Password == password);
+
+                    if (foundAdmin.HasValue)
+                    {
+                        // login success - route to admin portal
+                        
+                    }
+                    else if (foundPassenger.HasValue)
+                    {
+                        // login success - route to passenger portal
+                        
+                    }
+                    else
+                    {
+                        // User not found
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("\n  Invalid credentials. Press Enter to try again.");
+                        Console.ResetColor();
+                        Console.ReadLine();
+                    }
+                }
+                else
+                {
+                    // Empty password
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid password. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                }
+            }
+            else
+            {
+                // Empty email
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\n  Invalid email. Press Enter to try again.");
+                Console.ResetColor();
+                Console.ReadLine();
+            }
+        }
+    }
+
+
     internal class Program
     {      
         static void Main(string[] args)
         {
-            
+            // Load all data from CSV files into memory
+            CsvHelper.LoadAirports();
+            CsvHelper.LoadAirlines();
+            CsvHelper.LoadAircrafts();
+            CsvHelper.LoadFlights();
+            CsvHelper.LoadPassengers();
+            CsvHelper.LoadCrewMembers();
+            CsvHelper.LoadFlightCrew();
+            CsvHelper.LoadTickets();
+            CsvHelper.LoadBaggage();
+            CsvHelper.LoadPromotions();
+            CsvHelper.LoadAdmins();
+            CsvHelper.LoadLoyaltyLogs();
+            CsvHelper.LoadSystemLogs();
+            CsvHelper.LoadErrorLogs();
+
+            // Main menu
+            bool flag = false;
+            while (!flag) 
+            {
+                Console.WriteLine();
+                Console.Clear();
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine("╔══════════════════════════════════════════╗");
+                Console.WriteLine("║       AIRLINE MANAGEMENT SYSTEM          ║");
+                Console.WriteLine("╚══════════════════════════════════════════╝");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n  [1] Login");
+                Console.WriteLine("  [2] Register");
+                Console.WriteLine("  [0] Exit");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Select an option: ");
+                Console.ResetColor();
+
+                string choice = Console.ReadLine();
+
+                switch (choice)
+                {
+                    case "1":
+                        AuthService.Login();
+                        break;
+                    case "2":
+                        //Register();
+                        break;
+                    case "0":
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine("\n  Goodbye!");
+                        Console.ResetColor();
+                        flag = true;
+                        break;
+                    default:
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("\n  Invalid option. Press Enter to try again.");
+                        Console.ResetColor();
+                        Console.ReadLine();
+                        break;
+                }
+            }      
         }
     }
 }
