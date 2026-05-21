@@ -196,6 +196,10 @@ namespace AirlineManagementSystem
         public const int MaxFailedLoginAttempts = 3;
         public const int LockoutMinutes = 15;
         public const int MinPasswordLength = 8;
+
+        public const int SilverThreshold = 1000;
+        public const int GoldThreshold = 5000;
+        public const int PlatinumThreshold = 10000;
     }
 
     static class DataStore
@@ -1139,6 +1143,15 @@ namespace AirlineManagementSystem
             }
         }
 
+        public static bool IsValidPassword(string password)
+        {
+            if (password.Length < Constants.MinPasswordLength) return false;
+            if (!Regex.IsMatch(password, @"\d")) return false; // at least one digit
+            if (!Regex.IsMatch(password, @"[A-Z]")) return false; // at least one uppercase
+            if (!Regex.IsMatch(password, @"[!@#$%^&*()_+\-=\[\]]")) return false; // at least one special char
+            return true;
+        }
+
         public static void Register()
         {
             while (true)
@@ -1233,16 +1246,7 @@ namespace AirlineManagementSystem
 
                 Console.Write("\n  Enter your password: ");
                 string password = Console.ReadLine();
-                // Local function to check validity of the password
-                static bool IsValidPassword(string password)
-                {
-                    if (password.Length < Constants.MinPasswordLength) return false;
-                    if (!Regex.IsMatch(password, @"\d")) return false; // at least one digit
-                    if (!Regex.IsMatch(password, @"[A-Z]")) return false; // at least one uppercase
-                    if (!Regex.IsMatch(password, @"[!@#$%^&*()_+\-=\[\]]")) return false; // at least one special char
-                    return true;
-                }
-
+                
                 if(!IsValidPassword(password))
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
@@ -1410,7 +1414,8 @@ namespace AirlineManagementSystem
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("\n  [1] Browse & Search Flights");
                 Console.WriteLine("  [2] My Tickets");
-                Console.WriteLine("  [3] My Profile");
+                Console.WriteLine("  [3] Book a Ticket");
+                Console.WriteLine("  [4] My Profile");
                 Console.WriteLine("  [0] Logout");
                 Console.ResetColor();
 
@@ -1424,10 +1429,13 @@ namespace AirlineManagementSystem
                         //FlightService.Search(passenger);
                         break;
                     case "2": 
+                        //TicketService.BookTicket(passenger);
+                        break;
+                    case "3":
                         //TicketService.ShowMyTickets(passenger);
                         break;
-                    case "3": 
-                        //PassengerService.ShowProfile(passenger); 
+                    case "4": 
+                        ShowProfile(passenger); 
                         break;
                     case "0": 
                         AuthService.Logout(passenger.PassengerID, passenger.FullName, "Passenger"); 
@@ -1439,6 +1447,135 @@ namespace AirlineManagementSystem
                         Console.ReadLine();
                         break;
                 }
+            }
+        }
+
+        public static void ChangePassword(Passenger passenger)
+        {
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("\n  Enter current password: ");
+            string currPassword = Console.ReadLine();
+            if (currPassword == passenger.Password)
+            {
+                Console.Write("\n  Enter new password: ");
+                string newPassword = Console.ReadLine();
+                if (AuthService.IsValidPassword(newPassword))
+                {
+                    Console.Write("\n  Re-enter new password: ");
+                    string newPassword2 = Console.ReadLine();
+                    if (newPassword == newPassword2)
+                    {
+                        passenger.Password = newPassword;
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine($"\n  Password Changed successfully! Press Enter.");
+                        Console.ResetColor();
+                        Console.ReadLine();
+                    }
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("\n  New password mismatch. Press Enter to try again.");
+                        Console.ResetColor();
+                        Console.ReadLine();
+                    }
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Password must be with has digit, uppercase, special char, and length 8+ . Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                }
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\n  New password does not match current one. Press Enter to try again.");
+                Console.ResetColor();
+                Console.ReadLine();
+            }
+            Console.ResetColor();
+        }
+
+        public static void ShowProfile(Passenger passenger)
+        {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("╔══════════════════════════════════════════╗");
+            Console.WriteLine($"║        {passenger.FullName}'s Profile         ║");
+            Console.WriteLine("╚══════════════════════════════════════════╝");
+            Console.ResetColor();
+
+            Console.ForegroundColor = ConsoleColor.White;
+            // Get passenger's booking history
+            Console.WriteLine("\n============= Booking History ==============");
+            Console.WriteLine($"\n{"Ticket ID",-10} {"Flight",-8} {"From",-6} {"To",-6} {"Departure",-18} {"Class",-10} {"Status"}");
+            Console.WriteLine(new string('-', 75));
+            List<Ticket> bookingHistory = DataStore.Tickets.Values
+                .Where(t => t.PassengerID == passenger.PassengerID)
+                .ToList();
+            foreach (Ticket t in bookingHistory)
+            {
+                Flight f = DataStore.Flights[t.FlightNumber];
+                Console.WriteLine($"{t.TicketID,-10} {f.FlightNumber,-8} {f.OriginAirportCode,-6} {f.DestinationAirportCode,-6} {f.ScheduledDeparture.ToString("yyyy-MM-dd HH:mm"),-18} {t.SeatClass,-10} {t.Status}");
+            }
+
+            // Get passenger's loyalty points history
+            Console.WriteLine("\n\n========== Loyalty Points History ==========");
+            Console.WriteLine($"\n{"Ticket ID",-12} {"Points Changed",-23} {"Reason",-22} {"Transaction Date",-20}");
+            Console.WriteLine(new string('-', 80));
+            foreach (LoyaltyLog l in DataStore.LoyaltyLogs)
+            {
+                if (l.PassengerID == passenger.PassengerID)
+                {
+                    Console.WriteLine($"\n{l.TicketID,-17} {l.PointsChanged,-13} {l.Reason,-23} {l.TransactionDate,-20}");
+                }
+            }
+
+            // Get passenger's loyalty tier
+            Console.WriteLine($"\n\nLoyalty Tier: {passenger.TierStatus}");
+            string nextTier = "";
+            int remainPoints = 0;
+            switch (passenger.TierStatus)
+            {
+                case LoyaltyTier.Bronze:
+                    nextTier = "Silver";
+                    remainPoints = Constants.SilverThreshold - passenger.LoyaltyPoints;
+                    break;
+                case LoyaltyTier.Silver:
+                    nextTier = "Gold";
+                    remainPoints = Constants.GoldThreshold - passenger.LoyaltyPoints;
+                    break;
+                case LoyaltyTier.Gold:
+                    nextTier = "Platinum";
+                    remainPoints = Constants.PlatinumThreshold - passenger.LoyaltyPoints;
+                    break;
+                case LoyaltyTier.Platinum:
+                    nextTier = "Already in the highest tier.";
+                    break;
+                default:
+                    break;
+            }
+            Console.WriteLine($"Next Tier: {nextTier}");
+            Console.WriteLine($"Reamining Points: {remainPoints}");
+            Console.ResetColor();
+
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("\n  [1] Change Password");
+            Console.WriteLine("  [Enter] Back to Passenger Portal");
+            Console.ResetColor();
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("\n  Select an option: ");
+            Console.ResetColor();
+
+            switch (Console.ReadLine())
+            {
+                case "1":
+                    ChangePassword(passenger);
+                    break;
+                default:
+                    break;
             }
         }
     }
