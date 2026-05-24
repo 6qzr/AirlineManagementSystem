@@ -202,6 +202,10 @@ namespace AirlineManagementSystem
         public const int SilverThreshold = 1000;
         public const int GoldThreshold = 5000;
         public const int PlatinumThreshold = 10000;
+
+        public const decimal MaxCabinWeight = 7;
+        public const decimal MaxHoldWeight = 23;
+        public const decimal MaxOversizedWeight = 32;
     }
 
     static class DataStore
@@ -1414,6 +1418,74 @@ namespace AirlineManagementSystem
             Console.ReadLine();
         }
 
+        private static void AddBaggage(string ticketID)
+        {
+            // Select baggage type
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("\n  Baggage Type:");
+            Console.WriteLine("  [1] Cabin");
+            Console.WriteLine("  [2] Hold");
+            Console.WriteLine("  [3] Oversized");
+            Console.ResetColor();
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("\n  Select type: ");
+            Console.ResetColor();
+
+            BaggageType type;
+            switch (Console.ReadLine())
+            {
+                case "1": type = BaggageType.Cabin; break;
+                case "2": type = BaggageType.Hold; break;
+                case "3": type = BaggageType.Oversized; break;
+                default:
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid type. Press Enter.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    return;
+            }
+
+            // Weight limit check
+            decimal maxWeight = 0;
+
+            if (type == BaggageType.Cabin)
+                maxWeight = Constants.MaxCabinWeight;
+            else if (type == BaggageType.Hold)
+                maxWeight = Constants.MaxHoldWeight;
+            else if (type == BaggageType.Oversized)
+                maxWeight = Constants.MaxOversizedWeight;
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write($"\n  Enter weight in kg (max {maxWeight}kg): ");
+            Console.ResetColor();
+
+            if (!decimal.TryParse(Console.ReadLine(), out decimal weight) || weight <= 0 || weight > maxWeight)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"\n  Invalid weight. Must be between 0 and {maxWeight}kg. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            // Create baggage
+            Baggage newBaggage = new Baggage();
+            newBaggage.BaggageID = "BG" + (DataStore.Baggages.Count + 1).ToString("D5");
+            newBaggage.TicketID = ticketID;
+            newBaggage.WeightKg = weight;
+            newBaggage.Type = type;
+            newBaggage.Status = BaggageStatus.CheckedIn;
+
+            DataStore.Baggages.Add(newBaggage);
+            CsvHelper.SaveBaggage();
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"\n  Baggage {newBaggage.BaggageID} added successfully. Press Enter.");
+            Console.ResetColor();
+            Console.ReadLine();
+        }
+
         public static void AddUpdateBaggage(Passenger passenger)
         {
             Console.ForegroundColor = ConsoleColor.Gray;
@@ -1473,7 +1545,7 @@ namespace AirlineManagementSystem
             switch (Console.ReadLine())
             {
                 case "1":
-                    //AddBaggage(ticketID);
+                    AddBaggage(ticketID);
                     break;
                 case "2":
                     //UpdateBaggage(ticketID);
