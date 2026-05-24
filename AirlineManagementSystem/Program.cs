@@ -1366,7 +1366,11 @@ namespace AirlineManagementSystem
             string ticketID = Console.ReadLine();
             Console.ResetColor();
 
-            if(!DataStore.Tickets.TryGetValue(ticketID, out Ticket ticket))
+            Ticket? ticket = DataStore.Tickets.Values
+                .Where(t => t.TicketID == ticketID && t.PassengerID == passenger.PassengerID)
+                .FirstOrDefault();
+
+            if (ticket == null)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("\n  Invalid ticket ID. Press Enter to try again.");
@@ -1375,7 +1379,8 @@ namespace AirlineManagementSystem
                 return;
             }
 
-            Flight flight = DataStore.Flights[ticket.FlightNumber];
+            Ticket t = ticket.Value;
+            Flight flight = DataStore.Flights[t.FlightNumber];
 
             if(!(flight.ScheduledDeparture > DateTime.Now))
             {
@@ -1386,14 +1391,29 @@ namespace AirlineManagementSystem
                 return;
             }
 
-            ticket.Status = TicketStatus.Cancelled;
-            DataStore.Tickets[ticketID] = ticket;
+            t.Status = TicketStatus.Cancelled;
+            DataStore.Tickets[t.TicketID] = t;
+
+            // Restore seat
+            if (t.SeatClass == TicketSeatClass.Business)
+                flight.AvailableBusinessSeats++;
+            else
+                flight.AvailableEconomySeats++;
+
+            DataStore.Flights[t.FlightNumber] = flight;
+
+            CsvHelper.SaveTickets();
             CsvHelper.SaveTickets();
 
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine($"\n  Ticket cancelled successfully! Press Enter.");
             Console.ResetColor();
             Console.ReadLine();
+        }
+
+        public static void AddUpdateBaggege(Passenger passenger)
+        {
+
         }
 
         public static void ManageMyTickets(Passenger passenger)
@@ -1441,14 +1461,24 @@ namespace AirlineManagementSystem
                             case "1":
                                 CancelTicket(passenger);
                                 break;
+
                             case "2":
+                                AddUpdateBaggage(passenger);
                                 break;
+
                             case "3":
+
                                 break;
+
                             case "0":
+                                // Back to Manage My Tickets
                                 break;
+
                             default:
-                                Console.WriteLine("\n  Invalid option. Press Enter");
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("\n  Invalid option. Press Enter to back to Manage My Tickets");
+                                Console.ResetColor();
+                                Console.ReadLine();
                                 break;
                         }
 
