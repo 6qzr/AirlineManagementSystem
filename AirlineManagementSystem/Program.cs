@@ -1486,6 +1486,68 @@ namespace AirlineManagementSystem
             Console.ReadLine();
         }
 
+        private static void UpdateBaggage(string ticketID)
+        {
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("\n  Enter baggage ID to update: ");
+            string baggageID = Console.ReadLine();
+            Console.ResetColor();
+
+            int index = DataStore.Baggages.FindIndex(b => b.BaggageID == baggageID && b.TicketID == ticketID);
+
+            if (index == -1)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\n  Baggage not found. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write($"\n  Enter new weight in kg: ");
+            Console.ResetColor();
+
+            if (!decimal.TryParse(Console.ReadLine(), out decimal newWeight) || newWeight <= 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\n  Invalid weight. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            // Weight limit check
+            decimal maxWeight = 0;
+            BaggageType type = DataStore.Baggages[index].Type;
+            if (type == BaggageType.Cabin)
+                maxWeight = Constants.MaxCabinWeight;
+            else if (type == BaggageType.Hold)
+                maxWeight = Constants.MaxHoldWeight;
+            else if (type == BaggageType.Oversized)
+                maxWeight = Constants.MaxOversizedWeight;
+
+            if (newWeight > maxWeight)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"\n  Weight exceeds max limit of {maxWeight}kg. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            // Copy modify put back
+            Baggage b = DataStore.Baggages[index];
+            b.WeightKg = newWeight;
+            DataStore.Baggages[index] = b;
+            CsvHelper.SaveBaggage();
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"\n  Baggage updated successfully. Press Enter.");
+            Console.ResetColor();
+            Console.ReadLine();
+        }
+
         public static void AddUpdateBaggage(Passenger passenger)
         {
             Console.ForegroundColor = ConsoleColor.Gray;
@@ -1548,7 +1610,7 @@ namespace AirlineManagementSystem
                     AddBaggage(ticketID);
                     break;
                 case "2":
-                    //UpdateBaggage(ticketID);
+                    UpdateBaggage(ticketID);
                     break;
                 case "0":
                     return;
