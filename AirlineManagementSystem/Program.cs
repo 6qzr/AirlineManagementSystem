@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using static System.Collections.Specialized.BitVector32;
 
 namespace AirlineManagementSystem
 {
@@ -1316,6 +1317,133 @@ namespace AirlineManagementSystem
         }
     }
 
+    static class TicketService
+    {
+        public static void ShowTickets(Passenger passenger, List<TicketStatus> statuses)
+        {
+            List<Ticket> tickets = DataStore.Tickets.Values
+            .Where(t => t.PassengerID == passenger.PassengerID && statuses.Contains(t.Status))
+            .ToList();
+
+            if (tickets.Count == 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"  No tickets found.");
+                Console.ResetColor();
+                return;
+            }
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine($"\n{"Ticket ID",-12} {"Flight",-8} {"From",-6} {"To",-6} {"Departure",-20} {"Class",-10} {"Seat",-6} {"Price",-10} {"Points",-8} {"Promo",-10} {"Status"}");
+            Console.WriteLine(new string('-', 110));
+
+            foreach (Ticket t in tickets)
+            {
+                Flight f = DataStore.Flights[t.FlightNumber];
+                Console.WriteLine(
+                    $"{t.TicketID,-12} " +
+                    $"{f.FlightNumber,-8} " +
+                    $"{f.OriginAirportCode,-6} " +
+                    $"{f.DestinationAirportCode,-6} " +
+                    $"{f.ScheduledDeparture.ToString("yyyy-MM-dd HH:mm"),-20} " +
+                    $"{t.SeatClass,-10} " +
+                    $"{t.SeatNumber,-6} " +
+                    $"{t.FinalPrice.ToString("C"),-10} " +
+                    $"{t.LoyaltyPointsEarned,-8} " +
+                    $"{(string.IsNullOrEmpty(t.PromoCode) ? "None" : t.PromoCode),-10} " +
+                    $"{t.Status}"
+                );
+            }
+            Console.WriteLine(new string('-', 110));
+            Console.ResetColor();
+        }
+
+        public static void CancelTicket(Passenger passenger)
+        {
+
+        }
+
+        public static void ManageMyTickets(Passenger passenger)
+        {
+            while (true)
+            {
+                Console.Clear();
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine("╔══════════════════════════════════════════╗");
+                Console.WriteLine("║             Manage My Tickets            ║");
+                Console.WriteLine("╚══════════════════════════════════════════╝");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n  [1] Upcoming Tickets");
+                Console.WriteLine("  [2] Past Tickets");
+                Console.WriteLine("  [0] Back to Portal");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Select an option: ");
+                Console.ResetColor();
+
+                switch (Console.ReadLine())
+                {
+                    case "1":
+                        Console.ForegroundColor = ConsoleColor.White;
+                        // Get passenger's Upcoming tickets
+                        Console.WriteLine("\n============= Upcoming Tickets ==============");
+                        ShowTickets(passenger, [TicketStatus.Confirmed, TicketStatus.CheckedIn]);
+                        Console.ResetColor();
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine("\n  [1] Cancel a ticket");
+                        Console.WriteLine("  [2] Add or update baggage");
+                        Console.WriteLine("  [3] Check in to a flight");
+                        Console.WriteLine("  [0] Back to Manage My Ticket");
+                        Console.ResetColor();
+
+                        Console.ForegroundColor = ConsoleColor.Gray;
+                        Console.Write("\n  Select an option: ");
+                        Console.ResetColor();
+
+                        switch (Console.ReadLine())
+                        {
+                            case "1":
+                                CancelTicket(passenger);
+                                break;
+                            case "2":
+                                break;
+                            case "3":
+                                break;
+                            case "0":
+                                break;
+                            default:
+                                Console.WriteLine("\n  Invalid option. Press Enter");
+                                break;
+                        }
+
+                        break;
+
+                    case "2":
+                        Console.ForegroundColor = ConsoleColor.White;
+                        // Get passenger's Upcoming tickets
+                        Console.WriteLine("\n============= Past Tickets ==============");
+                        ShowTickets(passenger, [TicketStatus.Cancelled, TicketStatus.Boarded]);
+                        Console.ResetColor();
+                        Console.ReadLine();
+                        break;
+
+                    case "0":
+                        return;
+
+                    default:
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("\n  Invalid option. Press Enter to try again.");
+                        Console.ResetColor();
+                        Console.ReadLine();
+                        break;
+                }
+            }
+        }
+    }
+
     static class AdminPortal
     {
         public static void Show(Admin admin)
@@ -1413,8 +1541,8 @@ namespace AirlineManagementSystem
 
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("\n  [1] Browse & Search Flights");
-                Console.WriteLine("  [2] My Tickets");
-                Console.WriteLine("  [3] Book a Ticket");
+                Console.WriteLine("  [2] Book a Ticket");
+                Console.WriteLine("  [3] Manage My Tickets");
                 Console.WriteLine("  [4] My Profile");
                 Console.WriteLine("  [0] Logout");
                 Console.ResetColor();
@@ -1432,7 +1560,7 @@ namespace AirlineManagementSystem
                         //TicketService.BookTicket(passenger);
                         break;
                     case "3":
-                        //TicketService.ShowMyTickets(passenger);
+                        TicketService.ManageMyTickets(passenger);
                         break;
                     case "4": 
                         ShowProfile(passenger); 
