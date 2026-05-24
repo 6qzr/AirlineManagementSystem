@@ -206,6 +206,9 @@ namespace AirlineManagementSystem
         public const decimal MaxCabinWeight = 7;
         public const decimal MaxHoldWeight = 23;
         public const decimal MaxOversizedWeight = 32;
+
+        public const int CheckInWindowOpen = 3;   // hours before departure
+        public const int CheckInWindowClose = 45; // minutes before departure
     }
 
     static class DataStore
@@ -1623,6 +1626,55 @@ namespace AirlineManagementSystem
             }
         }
 
+        public static void CheckIn(Passenger passenger)
+        {
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("\n  Enter ticket ID: ");
+            string ticketID = Console.ReadLine();
+            Console.ResetColor();
+
+            // Validate ticket belongs to passenger and is upcoming
+            Ticket? ticket = DataStore.Tickets.Values
+                .FirstOrDefault(t => t.TicketID == ticketID &&
+                                     t.PassengerID == passenger.PassengerID &&
+                                     t.Status == TicketStatus.Confirmed);
+
+            if (ticket == null)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\n  Invalid ticket ID or ticket is not upcoming. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            // Allow to change ticket status to Checked-In between 3 hours to 45 minutes from departure
+            Flight flight = DataStore.Flights[ticket.Value.FlightNumber];
+
+            DateTime windowOpen = flight.ScheduledDeparture.AddHours(-Constants.CheckInWindowOpen);
+            DateTime windowClose = flight.ScheduledDeparture.AddMinutes(-Constants.CheckInWindowClose);
+
+            if (DateTime.Now >= windowOpen && DateTime.Now <= windowClose)
+            {
+                Ticket t = ticket.Value;
+                t.Status = TicketStatus.CheckedIn;
+                DataStore.Tickets[t.TicketID] = t;
+                CsvHelper.SaveTickets();
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("\n  Checked in successfully! Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"\n  Check-in window is between {windowOpen:yyyy-MM-dd HH:mm} and {windowClose:yyyy-MM-dd HH:mm}. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+            }
+        }
+
         public static void ManageMyTickets(Passenger passenger)
         {
             while (true)
@@ -1674,7 +1726,7 @@ namespace AirlineManagementSystem
                                 break;
 
                             case "3":
-
+                                CheckIn(passenger);
                                 break;
 
                             case "0":
