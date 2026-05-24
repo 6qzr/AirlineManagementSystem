@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using static System.Collections.Specialized.BitVector32;
 
 namespace AirlineManagementSystem
@@ -1360,7 +1361,39 @@ namespace AirlineManagementSystem
 
         public static void CancelTicket(Passenger passenger)
         {
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("\n  Enter ticket ID: ");
+            string ticketID = Console.ReadLine();
+            Console.ResetColor();
 
+            if(!DataStore.Tickets.TryGetValue(ticketID, out Ticket ticket))
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\n  Invalid ticket ID. Press Enter to try again.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            Flight flight = DataStore.Flights[ticket.FlightNumber];
+
+            if(!(flight.ScheduledDeparture > DateTime.Now))
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\n  Ticket cannot be cancelled. Flight already departed. Press Enter");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            ticket.Status = TicketStatus.Cancelled;
+            DataStore.Tickets[ticketID] = ticket;
+            CsvHelper.SaveTickets();
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"\n  Ticket cancelled successfully! Press Enter.");
+            Console.ResetColor();
+            Console.ReadLine();
         }
 
         public static void ManageMyTickets(Passenger passenger)
