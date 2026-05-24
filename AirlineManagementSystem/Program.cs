@@ -1367,13 +1367,16 @@ namespace AirlineManagementSystem
             Console.ResetColor();
 
             Ticket? ticket = DataStore.Tickets.Values
-                .Where(t => t.TicketID == ticketID && t.PassengerID == passenger.PassengerID)
-                .FirstOrDefault();
+                .FirstOrDefault(t => t.TicketID == ticketID &&
+                    t.PassengerID == passenger.PassengerID &&
+                    (t.Status == TicketStatus.Confirmed ||
+                     t.Status == TicketStatus.CheckedIn));
+
 
             if (ticket == null)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("\n  Invalid ticket ID. Press Enter to try again.");
+                Console.WriteLine("\n  Invalid ticket ID or ticket is not upcoming. Press Enter to try again.");
                 Console.ResetColor();
                 Console.ReadLine();
                 return;
@@ -1411,9 +1414,79 @@ namespace AirlineManagementSystem
             Console.ReadLine();
         }
 
-        public static void AddUpdateBaggege(Passenger passenger)
+        public static void AddUpdateBaggage(Passenger passenger)
         {
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("\n  Enter ticket ID: ");
+            string ticketID = Console.ReadLine();
+            Console.ResetColor();
 
+            // Validate ticket belongs to passenger and is upcoming
+            Ticket? ticket = DataStore.Tickets.Values
+                .FirstOrDefault(t => t.TicketID == ticketID &&
+                                     t.PassengerID == passenger.PassengerID &&
+                                     (t.Status == TicketStatus.Confirmed ||
+                                      t.Status == TicketStatus.CheckedIn));
+
+            if (ticket == null)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\n  Invalid ticket ID or ticket is not upcoming. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            // Show existing baggage for this ticket
+            List<Baggage> existing = DataStore.Baggages
+                .Where(b => b.TicketID == ticketID)
+                .ToList();
+
+            if (existing.Count > 0)
+            {
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine($"\n{"Baggage ID",-12} {"Type",-12} {"Weight (kg)",-14} {"Status"}");
+                Console.WriteLine(new string('-', 55));
+                foreach (Baggage b in existing)
+                    Console.WriteLine($"{b.BaggageID,-12} {b.Type,-12} {b.WeightKg,-14} {b.Status}");
+                Console.WriteLine(new string('-', 55));
+                Console.ResetColor();
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n  No baggage found for this ticket.");
+                Console.ResetColor();
+            }
+
+            // Menu
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("\n  [1] Add Baggage");
+            Console.WriteLine("  [2] Update Baggage");
+            Console.WriteLine("  [0] Back");
+            Console.ResetColor();
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("\n  Select an option: ");
+            Console.ResetColor();
+
+            switch (Console.ReadLine())
+            {
+                case "1":
+                    //AddBaggage(ticketID);
+                    break;
+                case "2":
+                    //UpdateBaggage(ticketID);
+                    break;
+                case "0":
+                    return;
+                default:
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid option. Press Enter.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    break;
+            }
         }
 
         public static void ManageMyTickets(Passenger passenger)
