@@ -1,6 +1,7 @@
 ﻿using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using static System.Collections.Specialized.BitVector32;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace AirlineManagementSystem
 {
@@ -1359,6 +1360,8 @@ namespace AirlineManagementSystem
                     Console.ReadLine();
                     continue;
                 }
+                bool roundTrip = (trip == "2") ? true : false;
+
                 Console.Write("\n  Origin airport code: ");
                 string oAirport = Console.ReadLine().ToUpper();
                 if (!DataStore.Airports.ContainsKey(oAirport))
@@ -1398,7 +1401,7 @@ namespace AirlineManagementSystem
                 }
 
                 DateTime rDate = DateTime.MinValue;
-                if (trip == "2")
+                if (roundTrip)
                 {
                     Console.Write("\n  Return date (yyyy-MM-dd): ");
                     if (!DateTime.TryParse(Console.ReadLine(), out rDate))
@@ -1441,7 +1444,7 @@ namespace AirlineManagementSystem
                     .ToList();
 
                 List<Flight> returnResults = new();
-                if (trip == "2")
+                if (roundTrip)
                 {
                     returnResults = DataStore.Flights.Values
                         .Where(f => f.OriginAirportCode == dAirport &&
@@ -1529,7 +1532,7 @@ namespace AirlineManagementSystem
                     }
                 }
 
-                if (trip == "2")
+                if (roundTrip)
                 {
                     Console.ForegroundColor = ConsoleColor.Cyan;
                     Console.WriteLine("\nReturn Flights:");
@@ -1557,11 +1560,19 @@ namespace AirlineManagementSystem
                         }
                     }
                 }
-                
-               /*
-                * Book a Ticket
-                */
 
+                /*
+                 * Book a Ticket
+                 */
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n  [1] Book Ticket");
+                Console.WriteLine("  [0] Continue Flight Search");
+                Console.ResetColor();
+
+                if(Console.ReadLine() == "1")
+                {
+                    TicketService.BookTicket(passenger, oAirport, dAirport, dDate, roundTrip, rDate, seatClass, maxPrice);
+                }
             }
         }
     }
@@ -2069,7 +2080,6 @@ namespace AirlineManagementSystem
             Console.WriteLine($"  {"FINAL PRICE",-35} {price:C}");
             Console.ResetColor();
             Console.WriteLine(new string('-', 50));
-
         }
 
         public static void ManageMyTickets(Passenger passenger)
@@ -2162,7 +2172,7 @@ namespace AirlineManagementSystem
             }
         }
 
-        public static void BookTicket(Passenger passenger)
+        public static void BookTicket(Passenger passenger, string originAirport, string departureAirport, DateTime departureDate, bool roundTrip, DateTime returnDate, TicketSeatClass seatClass, decimal maxPrice)
         {
 
         }
