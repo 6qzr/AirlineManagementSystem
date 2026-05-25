@@ -209,6 +209,14 @@ namespace AirlineManagementSystem
 
         public const int CheckInWindowOpen = 3;   // hours before departure
         public const int CheckInWindowClose = 45; // minutes before departure
+
+        public const decimal PerKmRate = 0.10m;
+        public const decimal BusinessMultiplier = 2.0m;
+        public const decimal PeakSeasonSurcharge = 0.15m;
+        public const int AdvanceBookingDays = 30;
+        public const decimal AdvanceBookingDiscount = 0.10m;
+        public const decimal TaxRate = 0.05m;
+        public static readonly int[] PeakMonths = { 6, 7, 8, 12 };
     }
 
     static class DataStore
@@ -1549,12 +1557,11 @@ namespace AirlineManagementSystem
                         }
                     }
                 }
-                else
-                {
-                    Console.ReadLine();
-                    return;
-                }
-                Console.ReadLine();
+                
+               /*
+                * Book a Ticket
+                */
+
             }
         }
     }
@@ -1909,6 +1916,162 @@ namespace AirlineManagementSystem
             }
         }
 
+        public static void TicketPriceCalculator(Airport originAirport, Airport DestinationAirport, TicketSeatClass seatClass, DateTime travelDate, Passenger passenger, string promoCode = null)
+        {
+            if(!DataStore.Airports.ContainsKey(originAirport.IATACode) || !DataStore.Airports.ContainsKey(DestinationAirport.IATACode))
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\n  Origin or/and destination airport do not exist. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            Flight? flight = DataStore.Flights.Values
+                .FirstOrDefault(f => f.OriginAirportCode == originAirport.IATACode &&
+                                f.DestinationAirportCode == DestinationAirport.IATACode &&
+                                f.ScheduledDeparture.Date == travelDate.Date);
+
+            if (flight == null)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\n  No matching flight found.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            if (seatClass == TicketSeatClass.Economy && flight.Value.AvailableEconomySeats <= 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\n  No economy seats available.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            if (seatClass == TicketSeatClass.Business && flight.Value.AvailableBusinessSeats <= 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\n  No business seats available.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            // Base Price
+            decimal price = flight.Value.BasePrice;
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine($"\n  {"Base Price",-35} +{price:C}");
+
+            // Distance-Based Multiplier
+            float tzDiff = Math.Abs(originAirport.TimeZoneOffset - DestinationAirport.TimeZoneOffset);
+            decimal simulatedDistance = (decimal)(tzDiff * 800); // 800km per timezone hour
+            decimal distanceCost = simulatedDistance * Constants.PerKmRate;
+            price += distanceCost;
+            Console.WriteLine($"  {"Distance Surcharge",-35} +{distanceCost:C}");
+
+            // Seat Class Multiplier
+            if (seatClass == TicketSeatClass.Business)
+            {
+                decimal businessCost = price * (Constants.BusinessMultiplier - 1);
+                price += businessCost;
+                Console.WriteLine($"  {"Business Class Multiplier (x{Constants.BusinessMultiplier})",-35} +{businessCost:C}");
+            }
+            else
+            {
+                Console.WriteLine($"  {"Economy Class",-35} +$0.00");
+            }
+
+            // Peak Season Surcharge
+            if (Constants.PeakMonths.Contains(travelDate.Month))
+            {
+                decimal surcharge = price * Constants.PeakSeasonSurcharge;
+                price += surcharge;
+                Console.WriteLine($"  {"Peak Season Surcharge ({Constants.PeakSeasonSurcharge:P0})",-35} +{surcharge:C}");
+            }
+            else
+            {
+                Console.WriteLine($"  {"Peak Season Surcharge",-35} Not applicable");
+            }
+
+            // Advance Booking Discount
+            int daysUntilDeparture = (travelDate.Date - DateTime.Now.Date).Days;
+            if (daysUntilDeparture > Constants.AdvanceBookingDays)
+            {
+                decimal discount = price * Constants.AdvanceBookingDiscount;
+                price -= discount;
+                Console.WriteLine($"  {"Advance Booking Discount ({Constants.AdvanceBookingDiscount:P0})",-35} -{discount:C}");
+            }
+            else
+            {
+                Console.WriteLine($"  {"Advance Booking Discount",-35} Not applicable");
+            }
+
+            // Loyalty Tier Discount
+            decimal tierDiscount = passenger.TierStatus switch
+            {
+                LoyaltyTier.Silver => 0.05m,
+                LoyaltyTier.Gold => 0.10m,
+                LoyaltyTier.Platinum => 0.15m,
+                _ => 0.00m
+            };
+
+            if (tierDiscount > 0)
+            {
+                decimal tierCost = price * tierDiscount;
+                price -= tierCost;
+                Console.WriteLine($"  {$"Loyalty Tier Discount ({passenger.TierStatus})",-35} -{tierCost:C}");
+            }
+            else
+            {
+                Console.WriteLine($"  {"Loyalty Tier Discount (Bronze)",-35} Not applicable");
+            }
+
+            // Promo Code Discount
+            if (!string.IsNullOrEmpty(promoCode) && DataStore.Promotions.ContainsKey(promoCode))
+            {
+                Promotion promo = DataStore.Promotions[promoCode];
+                bool validDate = DateTime.Now >= promo.StartDate && DateTime.Now <= promo.EndDate;
+                bool validUses = promo.CurrentUseCount < promo.MaxUses;
+                bool validClass = promo.ApplicableClass == PromotionApplicableClass.Both ||
+                                  (promo.ApplicableClass == PromotionApplicableClass.Economy && seatClass == TicketSeatClass.Economy) ||
+                                  (promo.ApplicableClass == PromotionApplicableClass.Business && seatClass == TicketSeatClass.Business);
+
+                if (promo.IsActive && validDate && validUses && validClass)
+                {
+                    decimal promoDiscount = price * (promo.DiscountPercentage / 100);
+                    price -= promoDiscount;
+                    Console.WriteLine($"  {$"Promo Code ({promoCode})",-35} -{promoDiscount:C}");
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"  {"Promo Code",-35} Invalid or expired");
+                    Console.ResetColor();
+                }
+            }
+            else if (!string.IsNullOrEmpty(promoCode))
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"  {"Promo Code",-35} Not found");
+                Console.ResetColor();
+            }
+
+            // Tax
+            decimal tax = price * Constants.TaxRate;
+            price += tax;
+            Console.WriteLine($"  {"Tax ({Constants.TaxRate:P0})",-35} +{tax:C}");
+
+            // Final Price
+            Console.WriteLine(new string('-', 50));
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"  {"FINAL PRICE",-35} {price:C}");
+            Console.ResetColor();
+            Console.WriteLine(new string('-', 50));
+
+        }
+
         public static void ManageMyTickets(Passenger passenger)
         {
             while (true)
@@ -2102,9 +2265,8 @@ namespace AirlineManagementSystem
 
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("\n  [1] Browse & Search Flights");
-                Console.WriteLine("  [2] Book a Ticket");
-                Console.WriteLine("  [3] Manage My Tickets");
-                Console.WriteLine("  [4] My Profile");
+                Console.WriteLine("  [2] Manage My Tickets");
+                Console.WriteLine("  [3] My Profile");
                 Console.WriteLine("  [0] Logout");
                 Console.ResetColor();
 
@@ -2117,13 +2279,10 @@ namespace AirlineManagementSystem
                     case "1": 
                         FlightService.Search(passenger);
                         break;
-                    case "2": 
-                        TicketService.BookTicket(passenger);
-                        break;
-                    case "3":
+                    case "2":
                         TicketService.ManageMyTickets(passenger);
                         break;
-                    case "4": 
+                    case "3": 
                         ShowProfile(passenger); 
                         break;
                     case "0": 
