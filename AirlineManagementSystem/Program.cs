@@ -2186,15 +2186,13 @@ namespace AirlineManagementSystem
                 Console.ResetColor();
 
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("\n  [1] Manage Airports");
-                Console.WriteLine("  [2] Manage Airlines");
-                Console.WriteLine("  [3] Manage Aircraft");
-                Console.WriteLine("  [4] Manage Flights");
-                Console.WriteLine("  [5] Manage Passengers");
-                Console.WriteLine("  [6] Manage Crew Members");
-                Console.WriteLine("  [7] Manage Tickets");
-                Console.WriteLine("  [8] Manage Baggage");
-                Console.WriteLine("  [9] Manage Promotions");
+                Console.WriteLine("\n  [1]  Flight Management");
+                Console.WriteLine("  [2] Ticket Price Calculator");
+                Console.WriteLine("  [3] Passenger Management");
+                Console.WriteLine("  [4] Crew Management");
+                Console.WriteLine("  [5] Promotions Management");
+                Console.WriteLine("  [6] Baggage Oversight");
+                Console.WriteLine("  [7] System Logs");
                 Console.WriteLine("  [0] Logout");
                 Console.ResetColor();
 
