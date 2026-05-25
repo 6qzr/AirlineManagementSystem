@@ -1564,14 +1564,50 @@ namespace AirlineManagementSystem
                 /*
                  * Book a Ticket
                  */
+                
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("\n  [1] Book Ticket");
-                Console.WriteLine("  [0] Continue Flight Search");
+                Console.WriteLine("  [Enter] Continue Flight Search");
                 Console.ResetColor();
 
-                if(Console.ReadLine() == "1")
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Select an option: ");
+                Console.ResetColor();
+                string outboundFlightNumber = "";
+                string returnFlightNumber = "";
+                if (Console.ReadLine() == "1")
                 {
-                    TicketService.BookTicket(passenger, oAirport, dAirport, dDate, roundTrip, rDate, seatClass, maxPrice);
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                    Console.Write("\n  Enter outbound flight number: ");
+                    outboundFlightNumber = Console.ReadLine();
+                    Console.ResetColor();
+                    bool exists = results.Any(f => f.FlightNumber == outboundFlightNumber);
+                    if (!exists)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("\n  Invalid outbound flight number. Press Enter");
+                        Console.ReadLine();
+                        Console.ResetColor();
+                        return;
+                    }
+
+                    if (roundTrip && returnResults.Count > 0)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Gray;
+                        Console.Write("\n  Enter return flight number: ");
+                        returnFlightNumber = Console.ReadLine();
+                        Console.ResetColor();
+                        exists = returnResults.Any(f => f.FlightNumber == returnFlightNumber);
+                        if (!exists)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("\n  Invalid outbound flight number. Press Enter");
+                            Console.ReadLine();
+                            Console.ResetColor();
+                            return;
+                        }
+                    }
+                    TicketService.BookTicket(passenger, outboundFlightNumber, roundTrip, returnFlightNumber, seatClass, maxPrice);
                 }
             }
         }
@@ -2172,8 +2208,13 @@ namespace AirlineManagementSystem
             }
         }
 
-        public static void BookTicket(Passenger passenger, string originAirport, string departureAirport, DateTime departureDate, bool roundTrip, DateTime returnDate, TicketSeatClass seatClass, decimal maxPrice)
+        public static void BookTicket(Passenger passenger, string outboundFlightNumber, bool roundTrip, string returnFlightNumber, TicketSeatClass seatClass, decimal maxPrice)
         {
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("\n  Enter a promo code (optional): ");
+            Console.ResetColor();
+            string promoCode = Console.ReadLine();
+
 
         }
     }
