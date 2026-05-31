@@ -1963,51 +1963,10 @@ namespace AirlineManagementSystem
             }
         }
 
-        public static void TicketPriceCalculator(Airport originAirport, Airport DestinationAirport, TicketSeatClass seatClass, DateTime travelDate, Passenger passenger, string promoCode = null)
+        public static void TicketPriceCalculator(Flight flight, Airport originAirport, Airport DestinationAirport, TicketSeatClass seatClass, DateTime travelDate, Passenger passenger, string promoCode = null)
         {
-            if(!DataStore.Airports.ContainsKey(originAirport.IATACode) || !DataStore.Airports.ContainsKey(DestinationAirport.IATACode))
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("\n  Origin or/and destination airport do not exist. Press Enter.");
-                Console.ResetColor();
-                Console.ReadLine();
-                return;
-            }
-
-            Flight? flight = DataStore.Flights.Values
-                .FirstOrDefault(f => f.OriginAirportCode == originAirport.IATACode &&
-                                f.DestinationAirportCode == DestinationAirport.IATACode &&
-                                f.ScheduledDeparture.Date == travelDate.Date);
-
-            if (flight == null)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("\n  No matching flight found.");
-                Console.ResetColor();
-                Console.ReadLine();
-                return;
-            }
-
-            if (seatClass == TicketSeatClass.Economy && flight.Value.AvailableEconomySeats <= 0)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("\n  No economy seats available.");
-                Console.ResetColor();
-                Console.ReadLine();
-                return;
-            }
-
-            if (seatClass == TicketSeatClass.Business && flight.Value.AvailableBusinessSeats <= 0)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("\n  No business seats available.");
-                Console.ResetColor();
-                Console.ReadLine();
-                return;
-            }
-
             // Base Price
-            decimal price = flight.Value.BasePrice;
+            decimal price = flight.BasePrice;
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine($"\n  {"Base Price",-35} +{price:C}");
 
@@ -2256,8 +2215,8 @@ namespace AirlineManagementSystem
                     case "1": 
                         //AirportService.Show();
                         break;
-                    case "2": 
-                        //AirlineService.Show(); 
+                    case "2":
+                        //CallTicketPriceCalculator();
                         break;
                     case "3": 
                         //AircraftService.Show();
