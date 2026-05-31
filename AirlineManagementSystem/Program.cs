@@ -2553,23 +2553,233 @@ namespace AirlineManagementSystem
             }
         }
 
+        public static void ShowDashboard(Admin admin)
+        {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("╔══════════════════════════════════════════════════════════════╗");
+            Console.WriteLine("║                        ADMIN DASHBOARD                       ║");
+            Console.WriteLine("╚══════════════════════════════════════════════════════════════╝");
+            Console.ResetColor();
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine($"\n  Logged in as: {admin.FullName} | {DateTime.Now:yyyy-MM-dd HH:mm}");
+            Console.ResetColor();
+
+            // ── 1. Flights Today by Status ──────────────────────────────────────
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("\n  ── Flights Today ──────────────────────────────────────");
+            Console.ResetColor();
+
+            List<Flight> todayFlights = DataStore.Flights.Values
+                .Where(f => f.ScheduledDeparture.Date == DateTime.Today)
+                .ToList();
+
+            if (todayFlights.Count == 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.WriteLine("  No flights scheduled today.");
+                Console.ResetColor();
+            }
+            else
+            {
+                var byStatus = todayFlights
+                    .GroupBy(f => f.Status)     // group flights that share the same status together
+                    .Select(g => new { Status = g.Key, Count = g.Count() });        // for each group, create an anonymous object
+
+                foreach (var s in byStatus)     // g.Key is the status that all flights in this group share
+                    Console.WriteLine($"  {s.Status,-15} {s.Count} flight(s)");     // how many flights are in this group
+            }
+
+            // ── 2. Total Passengers ─────────────────────────────────────────────
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("\n  ── Passengers ─────────────────────────────────────────");
+            Console.ResetColor();
+            Console.WriteLine($"  Total Registered    {DataStore.Passengers.Count}");
+
+            // ── 3. Tickets Sold ─────────────────────────────────────────────────
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("\n  ── Tickets Sold ───────────────────────────────────────");
+            Console.ResetColor();
+
+            int ticketsToday = DataStore.Tickets.Values
+                .Count(t => t.BookingDate.Date == DateTime.Today);
+
+            int ticketsAllTime = DataStore.Tickets.Count;
+
+            Console.WriteLine($"  {"Today",-25} {ticketsToday}");
+            Console.WriteLine($"  {"All-Time",-25} {ticketsAllTime}");
+
+            // ── 4. Revenue ──────────────────────────────────────────────────────
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("\n  ── Revenue ────────────────────────────────────────────");
+            Console.ResetColor();
+
+            decimal revenueToday = DataStore.Tickets.Values
+                .Where(t => t.BookingDate.Date == DateTime.Today &&
+                            (t.Status == TicketStatus.Confirmed || t.Status == TicketStatus.Boarded))
+                .Sum(t => t.FinalPrice);
+
+            decimal revenueAllTime = DataStore.Tickets.Values
+                .Where(t => t.Status == TicketStatus.Confirmed || t.Status == TicketStatus.Boarded)
+                .Sum(t => t.FinalPrice);
+
+            Console.WriteLine($"  {"Today",-25} {revenueToday:C}");
+            Console.WriteLine($"  {"All-Time",-25} {revenueAllTime:C}");
+
+            // ── 5. Seat Utilization ─────────────────────────────────────────────
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("\n  ── Seat Utilization (Scheduled Flights) ───────────────");
+            Console.ResetColor();
+
+            List<Flight> scheduledFlights = DataStore.Flights.Values
+                .Where(f => f.Status == FlightStatus.Scheduled)
+                .ToList();
+
+            if (scheduledFlights.Count == 0)
+            {
+                Console.WriteLine("  No scheduled flights.");
+            }
+            else
+            {
+                int totalSeats = scheduledFlights.Sum(f => f.AvailableBusinessSeats + f.AvailableEconomySeats);
+                int soldSeats = scheduledFlights.Sum(f =>
+                {
+                    Aircraft a = DataStore.Aircrafts[f.AircraftRegNumber];
+                    return (a.BusinessSeats - f.AvailableBusinessSeats) +
+                           (a.EconomySeats - f.AvailableEconomySeats);
+                });
+
+                int originalTotal = scheduledFlights.Sum(f =>
+                {
+                    Aircraft a = DataStore.Aircrafts[f.AircraftRegNumber];
+                    return a.BusinessSeats + a.EconomySeats;
+                });
+
+                double utilization = originalTotal == 0 ? 0 : (double)soldSeats / originalTotal * 100;
+                Console.WriteLine($"  Seats Sold / Total  {soldSeats} / {originalTotal} ({utilization:F1}%)");
+            }
+
+            // ── 6. Top 3 Popular Routes ─────────────────────────────────────────
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("\n  ── Top 3 Popular Routes ───────────────────────────────");
+            Console.ResetColor();
+
+            var topRoutes = DataStore.Tickets.Values
+                .Where(t => t.Status == TicketStatus.Confirmed || t.Status == TicketStatus.Boarded)
+                .Where(t => DataStore.Flights.ContainsKey(t.FlightNumber))      // safety — skip if flight was deleted
+                .Select(t => new
+                {
+                    Ticket = t,
+                    Route = $"{DataStore.Flights[t.FlightNumber].OriginAirportCode} => {DataStore.Flights[t.FlightNumber].DestinationAirportCode}"
+                })
+                .GroupBy(x => x.Route)
+                .OrderByDescending(g => g.Count())
+                .Take(3);
+
+            int rank = 1;
+            foreach (var route in topRoutes)
+                Console.WriteLine($"  {rank++}. {route.Key,-20} {route.Count()} ticket(s)");
+
+            // ── 7. Top 3 Highest Revenue Flights ───────────────────────────────
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("\n  ── Top 3 Highest Revenue Flights ──────────────────────");
+            Console.ResetColor();
+
+            var topRevenue = DataStore.Tickets.Values
+                .Where(t => t.Status == TicketStatus.Confirmed || t.Status == TicketStatus.Boarded)
+                .GroupBy(t => t.FlightNumber)
+                .Select(g => new { FlightNumber = g.Key, Revenue = g.Sum(t => t.FinalPrice) })
+                .OrderByDescending(g => g.Revenue)
+                .Take(3);
+
+            rank = 1;
+            foreach (var item in topRevenue)
+                Console.WriteLine($"  {rank++}. {item.FlightNumber,-12} {item.Revenue:C}");
+
+            // ── 8. Crew Assigned to Today's Flights ────────────────────────────
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("\n  ── Crew on Today's Flights ────────────────────────────");
+            Console.ResetColor();
+
+            List<string> todayFlightNumbers = todayFlights
+                .Select(f => f.FlightNumber)
+                .ToList();
+
+            int crewToday = DataStore.FlightCrew
+                .Where(fc => todayFlightNumbers.Contains(fc.FlightNumber))
+                .Select(fc => fc.EmployeeID)
+                .Distinct()
+                .Count();
+
+            Console.WriteLine($"  Crew Members Assigned   {crewToday}");
+
+            // ── 9. Delayed Flights ──────────────────────────────────────────────
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("\n  ── Delayed Flights ────────────────────────────────────");
+            Console.ResetColor();
+
+            List<Flight> delayedFlights = DataStore.Flights.Values
+                .Where(f => f.Status == FlightStatus.Delayed)
+                .ToList();
+
+            if (delayedFlights.Count == 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.WriteLine("  No delayed flights.");
+                Console.ResetColor();
+            }
+            else
+            {
+                Console.WriteLine($"  {"Flight",-10} {"Route",-15} {"Scheduled",-20} {"Delayed By"}");
+                Console.WriteLine(new string('-', 65));
+                foreach (Flight f in delayedFlights)
+                {
+                    double hoursDelayed = (DateTime.Now - f.ScheduledDeparture).TotalHours;
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"  {f.FlightNumber,-10} {f.OriginAirportCode}→{f.DestinationAirportCode,-10} {f.ScheduledDeparture:yyyy-MM-dd HH:mm,-20} {hoursDelayed:F1}h");
+                    Console.ResetColor();
+                }
+            }
+
+            // ── 10. Lost Baggage ────────────────────────────────────────────────
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("\n  ── Lost Baggage ───────────────────────────────────────");
+            Console.ResetColor();
+
+            List<Baggage> lostBaggage = DataStore.Baggages
+                .Where(b => b.Status == BaggageStatus.Lost)
+                .ToList();
+
+            if (lostBaggage.Count == 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.WriteLine("  No lost baggage.");
+                Console.ResetColor();
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"  {"Baggage ID",-12} {"Ticket ID",-12} {"Type",-12} {"Weight"}");
+                Console.WriteLine(new string('-', 50));
+                foreach (Baggage b in lostBaggage)
+                    Console.WriteLine($"  {b.BaggageID,-12} {b.TicketID,-12} {b.Type,-12} {b.WeightKg}kg");
+                Console.ResetColor();
+            }
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.WriteLine("\n  Press Enter to continue.");
+            Console.ResetColor();
+            Console.ReadLine();
+        }
+
         public static void Show(Admin admin)
         {
+            ShowDashboard(admin); // show dashboard first on login
             while (true)
             {
-                Console.Clear();
-                Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.WriteLine("╔══════════════════════════════════════════╗");
-                Console.WriteLine("║             Admin Dashboard              ║");
-                Console.WriteLine("╚══════════════════════════════════════════╝");
-                Console.ResetColor();
-
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine($"\n  Welcome, {admin.FullName}");
-                Console.ResetColor();
-
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("\n  [1]  Flight Management");
+                Console.WriteLine("\n  [1] Flight Management");
                 Console.WriteLine("  [2] Ticket Price Calculator");
                 Console.WriteLine("  [3] Passenger Management");
                 Console.WriteLine("  [4] Crew Management");
@@ -2605,12 +2815,6 @@ namespace AirlineManagementSystem
                         break;
                     case "7": 
                         //TicketService.Show();
-                        break;
-                    case "8": 
-                        //BaggageService.Show()
-                        break;
-                    case "9": 
-                        //PromotionService.Show();
                         break;
                     case "0": 
                         AuthService.Logout(admin.AdminID, admin.FullName, "Admin");
