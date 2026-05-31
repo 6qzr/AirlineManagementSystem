@@ -1338,6 +1338,32 @@ namespace AirlineManagementSystem
 
     static class FlightService
     {
+        private static void DisplayFlights(List<Flight> flights, TicketSeatClass seatClass)
+        {
+            Console.WriteLine($"{"Flight",-8} {"Airline",-8} {"Departure",-20} {"Arrival",-20} {"Duration",-10} {"Seats",-8} {"Price",-10}");
+            Console.WriteLine(new string('-', 85));
+
+            foreach (Flight f in flights)
+            {
+                TimeSpan duration = f.ScheduledArrival - f.ScheduledDeparture;
+                string durationStr = $"{(int)duration.TotalHours}h {duration.Minutes}m";
+                int availableSeats = seatClass == TicketSeatClass.Business
+                    ? f.AvailableBusinessSeats
+                    : f.AvailableEconomySeats;
+
+                if (availableSeats == 0)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"{f.FlightNumber,-8} {f.AirlineICAO,-8} {f.ScheduledDeparture:yyyy-MM-dd HH:mm,-20} {f.ScheduledArrival:yyyy-MM-dd HH:mm,-20} {durationStr,-10} {"SOLD OUT",-8} {f.BasePrice,-10}");
+                    Console.ResetColor();
+                }
+                else
+                {
+                    Console.WriteLine($"{f.FlightNumber,-8} {f.AirlineICAO,-8} {f.ScheduledDeparture:yyyy-MM-dd HH:mm,-20} {f.ScheduledArrival:yyyy-MM-dd HH:mm,-20} {durationStr,-10} {availableSeats,-8} {f.BasePrice,-10}");
+                }
+            }
+        }
+
         public static void Search(Passenger passenger)
         {
             while (true)
@@ -1362,7 +1388,7 @@ namespace AirlineManagementSystem
                     Console.ReadLine();
                     continue;
                 }
-                bool roundTrip = (trip == "2") ? true : false;
+                bool roundTrip = trip == "2";
 
                 Console.Write("\n  Origin airport code: ");
                 string oAirport = Console.ReadLine().ToUpper();
@@ -1481,17 +1507,17 @@ namespace AirlineManagementSystem
                 {
                     case "1":
                         results = results.OrderBy(f => f.BasePrice).ToList();
-                        returnResults = results.OrderBy(f => f.BasePrice).ToList();
+                        returnResults = returnResults.OrderBy(f => f.BasePrice).ToList();
                         break;
 
                     case "2":
                         results = results.OrderBy(f => f.ScheduledArrival - f.ScheduledDeparture).ToList();
-                        returnResults = results.OrderBy(f => f.ScheduledArrival - f.ScheduledDeparture).ToList();
+                        returnResults = returnResults.OrderBy(f => f.ScheduledArrival - f.ScheduledDeparture).ToList();
                         break;
 
                     case "3":
                         results = results.OrderBy(f => f.ScheduledDeparture).ToList();
-                        returnResults = results.OrderBy(f => f.ScheduledDeparture).ToList();
+                        returnResults = returnResults.OrderBy(f => f.ScheduledDeparture).ToList();
                         break;
 
                     default:
@@ -1502,71 +1528,23 @@ namespace AirlineManagementSystem
                         break;
                 }
 
-                Console.WriteLine($"\n{"Flight",-8} {"Airline",-8} {"Departure",-18} {"Arrival",-18} {"Duration",-10} {"Seats",-8} {"Price",-10} {""}");
-                Console.WriteLine(new string('-', 85));
                 Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.WriteLine("\nOutbound Flights:");
+                Console.WriteLine("\n  Outbound Flights:");
                 Console.ResetColor();
-
-                TimeSpan duration;
-                string durationStr;
-                int availableSeats;
-                string seatDisplay;
-                foreach (Flight f in results) 
-                {
-                    duration = f.ScheduledArrival - f.ScheduledDeparture;
-                    durationStr = $"{(int)duration.TotalHours}h {duration.Minutes}m";
-                    availableSeats = seatClass == TicketSeatClass.Business
-                        ? f.AvailableBusinessSeats
-                        : f.AvailableEconomySeats;
-                    seatDisplay = availableSeats == 0
-                        ? "SOLD OUT"
-                        : availableSeats.ToString();
-                    if (availableSeats == 0)
-                    {
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine($"{f.FlightNumber,-8} {f.AirlineICAO,-8} {f.ScheduledDeparture.ToString("yyyy-MM-dd HH:mm"),-18} {f.ScheduledArrival.ToString("yyyy-MM-dd HH:mm"),-18} {durationStr,-10} {"SOLD OUT",-8} {f.BasePrice,-10}");
-                        Console.ResetColor();
-                    }
-                    else
-                    {
-                        Console.WriteLine($"{f.FlightNumber,-8} {f.AirlineICAO,-8} {f.ScheduledDeparture.ToString("yyyy-MM-dd HH:mm"),-18} {f.ScheduledArrival.ToString("yyyy-MM-dd HH:mm"),-18} {durationStr,-10} {seatDisplay,-8} {f.BasePrice,-10}");
-                    }
-                }
+                DisplayFlights(results, seatClass);
 
                 if (roundTrip)
                 {
                     Console.ForegroundColor = ConsoleColor.Cyan;
-                    Console.WriteLine("\nReturn Flights:");
+                    Console.WriteLine("\n  Return Flights:");
                     Console.ResetColor();
-
-                    foreach (Flight f in returnResults)
-                    {
-                        duration = f.ScheduledArrival - f.ScheduledDeparture;
-                        durationStr = $"{(int)duration.TotalHours}h {duration.Minutes}m";
-                        availableSeats = seatClass == TicketSeatClass.Business
-                            ? f.AvailableBusinessSeats
-                            : f.AvailableEconomySeats;
-                        seatDisplay = availableSeats == 0
-                            ? "SOLD OUT"
-                            : availableSeats.ToString();
-                        if (availableSeats == 0)
-                        {
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine($"{f.FlightNumber,-8} {f.AirlineICAO,-8} {f.ScheduledDeparture.ToString("yyyy-MM-dd HH:mm"),-18} {f.ScheduledArrival.ToString("yyyy-MM-dd HH:mm"),-18} {durationStr,-10} {"SOLD OUT",-8} {f.BasePrice,-10}");
-                            Console.ResetColor();
-                        }
-                        else
-                        {
-                            Console.WriteLine($"{f.FlightNumber,-8} {f.AirlineICAO,-8} {f.ScheduledDeparture.ToString("yyyy-MM-dd HH:mm"),-18} {f.ScheduledArrival.ToString("yyyy-MM-dd HH:mm"),-18} {durationStr,-10} {seatDisplay,-8} {f.BasePrice,-10}");
-                        }
-                    }
+                    DisplayFlights(returnResults, seatClass);
                 }
 
                 /*
                  * Book a Ticket
                  */
-                
+
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("\n  [1] Book Ticket");
                 Console.WriteLine("  [Enter] Continue Flight Search");
@@ -1590,7 +1568,7 @@ namespace AirlineManagementSystem
                         Console.WriteLine("\n  Invalid outbound flight number. Press Enter");
                         Console.ReadLine();
                         Console.ResetColor();
-                        return;
+                        continue;
                     }
 
                     if (roundTrip && returnResults.Count > 0)
@@ -1606,8 +1584,16 @@ namespace AirlineManagementSystem
                             Console.WriteLine("\n  Invalid outbound flight number. Press Enter");
                             Console.ReadLine();
                             Console.ResetColor();
-                            return;
+                            continue;
                         }
+                    }
+                    else if (roundTrip && returnResults.Count == 0)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine("\n  No return flights found for selected date.");
+                        Console.ResetColor();
+                        Console.ReadLine();
+                        continue;
                     }
                     TicketService.BookTicket(passenger, outboundFlightNumber, roundTrip, returnFlightNumber, seatClass);
                 }
@@ -2183,12 +2169,12 @@ namespace AirlineManagementSystem
 
             // Show both flights before confirming
             Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine($"\n  Outbound: {outboundFlightNumber} | {outbound.OriginAirportCode} → {outbound.DestinationAirportCode} | {outbound.ScheduledDeparture:yyyy-MM-dd HH:mm}");
+            Console.WriteLine($"\n  Outbound: {outboundFlightNumber} | {outbound.OriginAirportCode} => {outbound.DestinationAirportCode} | {outbound.ScheduledDeparture:yyyy-MM-dd HH:mm}");
 
             if (roundTrip && !string.IsNullOrEmpty(returnFlightNumber))
             {
                 Flight ret = DataStore.Flights[returnFlightNumber];
-                Console.WriteLine($"  Return:   {returnFlightNumber} | {ret.OriginAirportCode} → {ret.DestinationAirportCode} | {ret.ScheduledDeparture:yyyy-MM-dd HH:mm}");
+                Console.WriteLine($"  Return:   {returnFlightNumber} | {ret.OriginAirportCode} => {ret.DestinationAirportCode} | {ret.ScheduledDeparture:yyyy-MM-dd HH:mm}");
             }
 
             // Single confirmation
@@ -2743,7 +2729,7 @@ namespace AirlineManagementSystem
                 {
                     double hoursDelayed = (DateTime.Now - f.ScheduledDeparture).TotalHours;
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"  {f.FlightNumber,-10} {f.OriginAirportCode}→{f.DestinationAirportCode,-10} {f.ScheduledDeparture:yyyy-MM-dd HH:mm,-20} {hoursDelayed:F1}h");
+                    Console.WriteLine($"  {f.FlightNumber,-10} {f.OriginAirportCode}=>{f.DestinationAirportCode,-10} {f.ScheduledDeparture:yyyy-MM-dd HH:mm,-20} {hoursDelayed:F1}h");
                     Console.ResetColor();
                 }
             }
