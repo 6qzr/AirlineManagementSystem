@@ -2163,70 +2163,11 @@ namespace AirlineManagementSystem
             }
         }
 
-        public static void BookTicket(Passenger passenger, string outboundFlightNumber, bool roundTrip, string returnFlightNumber, TicketSeatClass seatClass)
-        {
-            Flight outbound = DataStore.Flights[outboundFlightNumber];
-
-            // Show both flights before confirming
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine($"\n  Outbound: {outboundFlightNumber} | {outbound.OriginAirportCode} => {outbound.DestinationAirportCode} | {outbound.ScheduledDeparture:yyyy-MM-dd HH:mm}");
-
-            if (roundTrip && !string.IsNullOrEmpty(returnFlightNumber))
-            {
-                Flight ret = DataStore.Flights[returnFlightNumber];
-                Console.WriteLine($"  Return:   {returnFlightNumber} | {ret.OriginAirportCode} => {ret.DestinationAirportCode} | {ret.ScheduledDeparture:yyyy-MM-dd HH:mm}");
-            }
-
-            // Single confirmation
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.Write("\n  Confirm booking? [y/n]: ");
-            Console.ResetColor();
-            if (Console.ReadLine().ToLower() != "y")
-            {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("\n  Booking cancelled. Press Enter.");
-                Console.ResetColor();
-                Console.ReadLine();
-                return;
-            }
-
-            BookSingleTicket(passenger, outboundFlightNumber, seatClass);
-            if (roundTrip && !string.IsNullOrEmpty(returnFlightNumber))
-                BookSingleTicket(passenger, returnFlightNumber, seatClass);
-        }
-
-        private static void BookSingleTicket(Passenger passenger, string flightNumber, TicketSeatClass seatClass)
+        private static void BookSingleTicket(Passenger passenger, string flightNumber, TicketSeatClass seatClass, decimal finalPrice, string promoCode)
         {
             Flight flight = DataStore.Flights[flightNumber];
-            Airport origin = DataStore.Airports[flight.OriginAirportCode];
-            Airport destination = DataStore.Airports[flight.DestinationAirportCode];
 
-            // Promo code
-            Console.ForegroundColor = ConsoleColor.Gray;
-            Console.Write("\n  Promo code (optional — press Enter to skip): ");
-            Console.ResetColor();
-            string promoCode = Console.ReadLine();
-
-            // Show price breakdown
-            Console.WriteLine();
-            Console.WriteLine(new string('-', 50));
-            decimal finalPrice = TicketPriceCalculator(flight, origin, destination, seatClass, flight.ScheduledDeparture, passenger, promoCode);
-            Console.WriteLine(new string('-', 50));
-
-            // Confirm booking
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.Write("\n  Confirm booking? [y/n]: ");
-            Console.ResetColor();
-            if (Console.ReadLine().ToLower() != "y")
-            {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("\n  Booking cancelled. Press Enter.");
-                Console.ResetColor();
-                Console.ReadLine();
-                return;
-            }
-
-            // Assign seat number
+            // Assign seat
             string seatNumber = AssignSeat(flight, seatClass);
             if (string.IsNullOrEmpty(seatNumber))
             {
@@ -2339,6 +2280,96 @@ namespace AirlineManagementSystem
             Console.WriteLine("\n  Press Enter to continue.");
             Console.ResetColor();
             Console.ReadLine();
+        }
+
+        public static void BookTicket(Passenger passenger, string outboundFlightNumber, bool roundTrip, string returnFlightNumber, TicketSeatClass seatClass)
+        {
+            Flight outbound = DataStore.Flights[outboundFlightNumber];
+
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("╔══════════════════════════════════════════╗");
+            Console.WriteLine("║            Booking Summary               ║");
+            Console.WriteLine("╚══════════════════════════════════════════╝");
+            Console.ResetColor();
+
+            // Outbound summary
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("\n  OUTBOUND FLIGHT");
+            Console.ResetColor();
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine($"  {"Flight",-20} {outbound.FlightNumber}");
+            Console.WriteLine($"  {"From",-20} {outbound.OriginAirportCode}");
+            Console.WriteLine($"  {"To",-20} {outbound.DestinationAirportCode}");
+            Console.WriteLine($"  {"Departure",-20} {outbound.ScheduledDeparture:yyyy-MM-dd HH:mm}");
+            Console.WriteLine($"  {"Arrival",-20} {outbound.ScheduledArrival:yyyy-MM-dd HH:mm}");
+            Console.WriteLine($"  {"Seat Class",-20} {seatClass}");
+            Console.ResetColor();
+
+            // Return summary
+            if (roundTrip && !string.IsNullOrEmpty(returnFlightNumber))
+            {
+                Flight ret = DataStore.Flights[returnFlightNumber];
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n  RETURN FLIGHT");
+                Console.ResetColor();
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine($"  {"Flight",-20} {ret.FlightNumber}");
+                Console.WriteLine($"  {"From",-20} {ret.OriginAirportCode}");
+                Console.WriteLine($"  {"To",-20} {ret.DestinationAirportCode}");
+                Console.WriteLine($"  {"Departure",-20} {ret.ScheduledDeparture:yyyy-MM-dd HH:mm}");
+                Console.WriteLine($"  {"Arrival",-20} {ret.ScheduledArrival:yyyy-MM-dd HH:mm}");
+                Console.WriteLine($"  {"Seat Class",-20} {seatClass}");
+                Console.ResetColor();
+            }
+
+            // Promo code — ask once for both
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("\n  Promo code (optional — press Enter to skip): ");
+            Console.ResetColor();
+            string promoCode = Console.ReadLine();
+
+            // Show price breakdown for outbound
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("\n  OUTBOUND PRICE BREAKDOWN");
+            Console.ResetColor();
+            Console.WriteLine(new string('-', 50));
+            decimal outboundPrice = TicketPriceCalculator(outbound, DataStore.Airports[outbound.OriginAirportCode], DataStore.Airports[outbound.DestinationAirportCode], seatClass, outbound.ScheduledDeparture, passenger, promoCode);
+
+            // Show price breakdown for return
+            decimal returnPrice = 0;
+            if (roundTrip && !string.IsNullOrEmpty(returnFlightNumber))
+            {
+                Flight ret = DataStore.Flights[returnFlightNumber];
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n  RETURN PRICE BREAKDOWN");
+                Console.ResetColor();
+                Console.WriteLine(new string('-', 50));
+                returnPrice = TicketPriceCalculator(ret, DataStore.Airports[ret.OriginAirportCode], DataStore.Airports[ret.DestinationAirportCode], seatClass, ret.ScheduledDeparture, passenger, promoCode);
+            }
+
+            // Total
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"\n  {"TOTAL PRICE",-35} {(outboundPrice + returnPrice):C}");
+            Console.ResetColor();
+
+            // Single confirmation
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.Write("\n  Confirm booking? [y/n]: ");
+            Console.ResetColor();
+            if (Console.ReadLine().ToLower() != "y")
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n  Booking cancelled. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            // Book both tickets
+            BookSingleTicket(passenger, outboundFlightNumber, seatClass, outboundPrice, promoCode);
+            if (roundTrip && !string.IsNullOrEmpty(returnFlightNumber))
+                BookSingleTicket(passenger, returnFlightNumber, seatClass, returnPrice, promoCode);
         }
 
         private static string AssignSeat(Flight flight, TicketSeatClass seatClass)
