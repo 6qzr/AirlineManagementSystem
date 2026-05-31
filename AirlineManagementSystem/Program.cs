@@ -2180,6 +2180,169 @@ namespace AirlineManagementSystem
 
     static class AdminPortal
     {
+        public static void CallTicketPriceCalculator()
+        {
+            while (true)
+            {
+                Console.Clear();
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine("╔══════════════════════════════════════════╗");
+                Console.WriteLine("║         Ticket Price Calculator          ║");
+                Console.WriteLine("╚══════════════════════════════════════════╝");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n  [0] Back");
+                Console.ResetColor();
+
+                // Origin Airport
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Enter origin airport code: ");
+                Console.ResetColor();
+                string originCode = Console.ReadLine().ToUpper();
+                if (originCode == "0") return;
+
+                if (!DataStore.Airports.ContainsKey(originCode))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid origin airport code. Press Enter.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                // Destination Airport
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("  Enter destination airport code: ");
+                Console.ResetColor();
+                string destCode = Console.ReadLine().ToUpper();
+                if (destCode == "0") return;
+
+                if (!DataStore.Airports.ContainsKey(destCode))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid destination airport code. Press Enter.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                if (originCode == destCode)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Origin and destination cannot be the same. Press Enter.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                // Travel Date
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("  Travel date (yyyy-MM-dd): ");
+                Console.ResetColor();
+                if (!DateTime.TryParse(Console.ReadLine(), out DateTime travelDate))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid date format. Press Enter.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                // Search flight
+                Flight? foundFlight = DataStore.Flights.Values
+                    .Cast<Flight?>()
+                    .FirstOrDefault(f => f.Value.OriginAirportCode == originCode &&
+                                         f.Value.DestinationAirportCode == destCode &&
+                                         f.Value.ScheduledDeparture.Date == travelDate.Date);
+
+                if (foundFlight == null)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  No flights found. Press Enter.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                // Seat Class
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("  Seat class [1] Economy  [2] Business: ");
+                Console.ResetColor();
+                TicketSeatClass seatClass;
+                switch (Console.ReadLine())
+                {
+                    case "1": seatClass = TicketSeatClass.Business; break;
+                    default: seatClass = TicketSeatClass.Economy; break;
+                }
+
+                // Check seat clss availability
+                if (seatClass == TicketSeatClass.Economy && foundFlight.Value.AvailableEconomySeats <= 0)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  No economy seats available. Do you want to upgrade to business class [y/n]: ");
+                    Console.ResetColor();
+                    if (Console.ReadLine().ToLower() == "y")
+                    {
+                        seatClass = TicketSeatClass.Business;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+                if (seatClass == TicketSeatClass.Business && foundFlight.Value.AvailableBusinessSeats <= 0)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  No business seats available. Press Enter.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                // Passenger ID for loyalty tier
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("  Enter passenger ID (optional — press Enter to skip): ");
+                Console.ResetColor();
+                string passengerID = Console.ReadLine();
+                Passenger passenger = new Passenger();
+                passenger.TierStatus = LoyaltyTier.Bronze; // default if not found
+
+                if (!string.IsNullOrEmpty(passengerID) && DataStore.Passengers.ContainsKey(passengerID))
+                {
+                    passenger = DataStore.Passengers[passengerID];
+                }
+                else if (!string.IsNullOrEmpty(passengerID))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Passenger not found. Using Bronze tier by default.");
+                    Console.ResetColor();
+                }
+
+                // Promo Code
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("  Promo code (optional — press Enter to skip): ");
+                Console.ResetColor();
+                string promoCode = Console.ReadLine();
+
+                // Call pricing engine
+                Console.WriteLine();
+                Console.WriteLine(new string('-', 50));
+                Airport origin = DataStore.Airports[originCode];
+                Airport destination = DataStore.Airports[destCode];
+
+                TicketService.TicketPriceCalculator(foundFlight.Value, origin, destination, seatClass, travelDate, passenger, promoCode);
+
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n  [1] Calculate Again");
+                Console.WriteLine("  [0] Back");
+                Console.ResetColor();
+
+                Console.Write("\n  Select an option: ");
+                if (Console.ReadLine() != "1") return;
+            }
+        }
+
         public static void Show(Admin admin)
         {
             while (true)
@@ -2216,7 +2379,7 @@ namespace AirlineManagementSystem
                         //AirportService.Show();
                         break;
                     case "2":
-                        //CallTicketPriceCalculator();
+                        CallTicketPriceCalculator();
                         break;
                     case "3": 
                         //AircraftService.Show();
