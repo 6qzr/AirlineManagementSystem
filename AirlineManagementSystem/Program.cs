@@ -1984,11 +1984,12 @@ namespace AirlineManagementSystem
             {
                 decimal businessCost = price * (Constants.BusinessMultiplier - 1);
                 price += businessCost;
-                Console.WriteLine($"  {"Business Class Multiplier (x{Constants.BusinessMultiplier})",-35} +{businessCost:C}");
+                string label = $"Business Class (x{Constants.BusinessMultiplier})";
+                Console.WriteLine($"  {label,-35} +{businessCost:C}");
             }
             else
             {
-                Console.WriteLine($"  {"Economy Class",-35} +$0.00");
+                Console.WriteLine($"  {"Economy Class",-35} +{0:C}");
             }
 
             // Peak Season Surcharge
@@ -1996,7 +1997,8 @@ namespace AirlineManagementSystem
             {
                 decimal surcharge = price * Constants.PeakSeasonSurcharge;
                 price += surcharge;
-                Console.WriteLine($"  {"Peak Season Surcharge ({Constants.PeakSeasonSurcharge:P0})",-35} +{surcharge:C}");
+                string label = $"Peak Season Surcharge ({Constants.PeakSeasonSurcharge:P0})";
+                Console.WriteLine($"  {label,-35} +{surcharge:C}");
             }
             else
             {
@@ -2009,7 +2011,8 @@ namespace AirlineManagementSystem
             {
                 decimal discount = price * Constants.AdvanceBookingDiscount;
                 price -= discount;
-                Console.WriteLine($"  {"Advance Booking Discount ({Constants.AdvanceBookingDiscount:P0})",-35} -{discount:C}");
+                string label = $"Advance Booking ({Constants.AdvanceBookingDiscount:P0})";
+                Console.WriteLine($"  {label,-35} -{discount:C}");
             }
             else
             {
@@ -2029,14 +2032,15 @@ namespace AirlineManagementSystem
             {
                 decimal tierCost = price * tierDiscount;
                 price -= tierCost;
-                Console.WriteLine($"  {$"Loyalty Tier Discount ({passenger.TierStatus})",-35} -{tierCost:C}");
+                string label = $"Loyalty Discount ({passenger.TierStatus} {tierDiscount:P0})";
+                Console.WriteLine($"  {label,-35} -{tierCost:C}");
             }
             else
             {
-                Console.WriteLine($"  {"Loyalty Tier Discount (Bronze)",-35} Not applicable");
+                Console.WriteLine($"  {"Loyalty Discount (Bronze)",-35} Not applicable");
             }
 
-            // Promo Code Discount
+            // Promo Code
             if (!string.IsNullOrEmpty(promoCode) && DataStore.Promotions.ContainsKey(promoCode))
             {
                 Promotion promo = DataStore.Promotions[promoCode];
@@ -2050,7 +2054,8 @@ namespace AirlineManagementSystem
                 {
                     decimal promoDiscount = price * (promo.DiscountPercentage / 100);
                     price -= promoDiscount;
-                    Console.WriteLine($"  {$"Promo Code ({promoCode})",-35} -{promoDiscount:C}");
+                    string label = $"Promo Code ({promoCode} -{promo.DiscountPercentage}%)";
+                    Console.WriteLine($"  {label,-35} -{promoDiscount:C}");
                 }
                 else
                 {
@@ -2069,7 +2074,8 @@ namespace AirlineManagementSystem
             // Tax
             decimal tax = price * Constants.TaxRate;
             price += tax;
-            Console.WriteLine($"  {"Tax ({Constants.TaxRate:P0})",-35} +{tax:C}");
+            string taxLabel = $"Tax ({Constants.TaxRate:P0})";
+            Console.WriteLine($"  {taxLabel,-35} +{tax:C}");
 
             // Final Price
             Console.WriteLine(new string('-', 50));
