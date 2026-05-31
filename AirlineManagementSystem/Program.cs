@@ -218,6 +218,8 @@ namespace AirlineManagementSystem
         public const decimal AdvanceBookingDiscount = 0.10m;
         public const decimal TaxRate = 0.05m;
         public static readonly int[] PeakMonths = { 6, 7, 8, 12 };
+
+        public const int PointsPerDollar = 1; // 1 point per $1 spent
     }
 
     static class DataStore
@@ -1607,7 +1609,7 @@ namespace AirlineManagementSystem
                             return;
                         }
                     }
-                    TicketService.BookTicket(passenger, outboundFlightNumber, roundTrip, returnFlightNumber, seatClass, maxPrice);
+                    TicketService.BookTicket(passenger, outboundFlightNumber, roundTrip, returnFlightNumber, seatClass);
                 }
             }
         }
@@ -1963,7 +1965,7 @@ namespace AirlineManagementSystem
             }
         }
 
-        public static void TicketPriceCalculator(Flight flight, Airport originAirport, Airport DestinationAirport, TicketSeatClass seatClass, DateTime travelDate, Passenger passenger, string promoCode = null)
+        public static decimal TicketPriceCalculator(Flight flight, Airport originAirport, Airport DestinationAirport, TicketSeatClass seatClass, DateTime travelDate, Passenger passenger, string promoCode = null)
         {
             // Base Price
             decimal price = flight.BasePrice;
@@ -2075,6 +2077,8 @@ namespace AirlineManagementSystem
             Console.WriteLine($"  {"FINAL PRICE",-35} {price:C}");
             Console.ResetColor();
             Console.WriteLine(new string('-', 50));
+
+            return price;
         }
 
         public static void ManageMyTickets(Passenger passenger)
@@ -2167,14 +2171,199 @@ namespace AirlineManagementSystem
             }
         }
 
-        public static void BookTicket(Passenger passenger, string outboundFlightNumber, bool roundTrip, string returnFlightNumber, TicketSeatClass seatClass, decimal maxPrice)
+        public static void BookTicket(Passenger passenger, string outboundFlightNumber, bool roundTrip, string returnFlightNumber, TicketSeatClass seatClass)
         {
+            // Book outbound ticket
+            BookSingleTicket(passenger, outboundFlightNumber, seatClass);
+
+            // Book return ticket if round trip
+            if (roundTrip && !string.IsNullOrEmpty(returnFlightNumber))
+                BookSingleTicket(passenger, returnFlightNumber, seatClass);
+        }
+
+        private static void BookSingleTicket(Passenger passenger, string flightNumber, TicketSeatClass seatClass)
+        {
+            Flight flight = DataStore.Flights[flightNumber];
+            Airport origin = DataStore.Airports[flight.OriginAirportCode];
+            Airport destination = DataStore.Airports[flight.DestinationAirportCode];
+
+            // Promo code
             Console.ForegroundColor = ConsoleColor.Gray;
-            Console.Write("\n  Enter a promo code (optional): ");
+            Console.Write("\n  Promo code (optional — press Enter to skip): ");
             Console.ResetColor();
             string promoCode = Console.ReadLine();
 
+            // Show price breakdown
+            Console.WriteLine();
+            Console.WriteLine(new string('-', 50));
+            decimal finalPrice = TicketPriceCalculator(flight, origin, destination, seatClass, flight.ScheduledDeparture, passenger, promoCode);
+            Console.WriteLine(new string('-', 50));
 
+            // Confirm booking
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.Write("\n  Confirm booking? [y/n]: ");
+            Console.ResetColor();
+            if (Console.ReadLine().ToLower() != "y")
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n  Booking cancelled. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            // Assign seat number
+            string seatNumber = AssignSeat(flight, seatClass);
+            if (string.IsNullOrEmpty(seatNumber))
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\n  No seats available. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            // Calculate loyalty points earned
+            int pointsEarned = (int)(finalPrice * Constants.PointsPerDollar);
+
+            // Create ticket
+            Ticket newTicket = new Ticket();
+            newTicket.TicketID = "TK" + (DataStore.Tickets.Count + 1).ToString("D5");
+            newTicket.PassengerID = passenger.PassengerID;
+            newTicket.FlightNumber = flightNumber;
+            newTicket.SeatClass = seatClass;
+            newTicket.SeatNumber = seatNumber;
+            newTicket.BookingDate = DateTime.Now;
+            newTicket.Status = TicketStatus.Confirmed;
+            newTicket.FinalPrice = finalPrice;
+            newTicket.LoyaltyPointsEarned = pointsEarned;
+            newTicket.PromoCode = promoCode;
+
+            // Decrement available seats
+            Flight updatedFlight = flight;
+            if (seatClass == TicketSeatClass.Business)
+                updatedFlight.AvailableBusinessSeats--;
+            else
+                updatedFlight.AvailableEconomySeats--;
+            DataStore.Flights[flightNumber] = updatedFlight;
+
+            // Update promo use count
+            if (!string.IsNullOrEmpty(promoCode) && DataStore.Promotions.ContainsKey(promoCode))
+            {
+                Promotion promo = DataStore.Promotions[promoCode];
+                promo.CurrentUseCount++;
+                if (promo.CurrentUseCount >= promo.MaxUses)
+                    promo.IsActive = false;
+                DataStore.Promotions[promoCode] = promo;
+                CsvHelper.SavePromotions();
+            }
+
+            // Award loyalty points and update tier
+            Passenger updatedPassenger = passenger;
+            updatedPassenger.LoyaltyPoints += pointsEarned;
+            updatedPassenger.TierStatus = GetUpdatedTier(updatedPassenger.LoyaltyPoints);
+            DataStore.Passengers[passenger.PassengerID] = updatedPassenger;
+
+            // Save loyalty log
+            LoyaltyLog log = new LoyaltyLog();
+            log.LogID = "LL" + (DataStore.LoyaltyLogs.Count + 1).ToString("D5");
+            log.PassengerID = passenger.PassengerID;
+            log.TicketID = newTicket.TicketID;
+            log.PointsChanged = pointsEarned;
+            log.Reason = $"Booking {newTicket.TicketID}";
+            log.TransactionDate = DateTime.Now;
+            DataStore.LoyaltyLogs.Add(log);
+            CsvHelper.SaveLoyaltyLogs();
+
+            // Save system log
+            SystemLog sysLog = new SystemLog();
+            sysLog.LogID = "SL" + (DataStore.SystemLogs.Count + 1).ToString("D5");
+            sysLog.Timestamp = DateTime.Now;
+            sysLog.UserID = passenger.PassengerID;
+            sysLog.UserRole = "Passenger";
+            sysLog.ActionType = "Book";
+            sysLog.EntityAffected = $"Ticket {newTicket.TicketID}";
+            sysLog.Details = $"{passenger.FullName} booked {seatClass} seat on {flightNumber}.";
+            DataStore.SystemLogs.Add(sysLog);
+            CsvHelper.SaveSystemLogs();
+
+            // Save everything
+            DataStore.Tickets[newTicket.TicketID] = newTicket;
+            CsvHelper.SaveTickets();
+            CsvHelper.SaveFlights();
+            CsvHelper.SavePassengers();
+
+            // Booking summary
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("╔══════════════════════════════════════════╗");
+            Console.WriteLine("║         Booking Confirmed!               ║");
+            Console.WriteLine("╚══════════════════════════════════════════╝");
+            Console.ResetColor();
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine($"\n  {"Ticket ID",-25} {newTicket.TicketID}");
+            Console.WriteLine($"  {"Flight",-25} {flightNumber}");
+            Console.WriteLine($"  {"From",-25} {flight.OriginAirportCode}");
+            Console.WriteLine($"  {"To",-25} {flight.DestinationAirportCode}");
+            Console.WriteLine($"  {"Departure",-25} {flight.ScheduledDeparture.ToString("yyyy-MM-dd HH:mm")}");
+            Console.WriteLine($"  {"Seat Class",-25} {seatClass}");
+            Console.WriteLine($"  {"Seat Number",-25} {seatNumber}");
+            Console.WriteLine($"  {"Price Paid",-25} {finalPrice:C}");
+            Console.WriteLine($"  {"Points Earned",-25} {pointsEarned}");
+            Console.WriteLine($"  {"Total Points",-25} {updatedPassenger.LoyaltyPoints}");
+            Console.WriteLine($"  {"Tier Status",-25} {updatedPassenger.TierStatus}");
+
+            if (updatedPassenger.TierStatus != passenger.TierStatus)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"\n  Congratulations! You've been upgraded to {updatedPassenger.TierStatus}!");
+                Console.ResetColor();
+            }
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.WriteLine("\n  Press Enter to continue.");
+            Console.ResetColor();
+            Console.ReadLine();
+        }
+
+        private static string AssignSeat(Flight flight, TicketSeatClass seatClass)
+        {
+            // Get already taken seats for this flight
+            List<string> takenSeats = DataStore.Tickets.Values
+                .Where(t => t.FlightNumber == flight.FlightNumber &&
+                            t.SeatClass == seatClass &&
+                            t.Status != TicketStatus.Cancelled)
+                .Select(t => t.SeatNumber)
+                .ToList();
+
+            // Generate seat pool based on class
+            int totalSeats = seatClass == TicketSeatClass.Business
+                ? flight.AvailableBusinessSeats
+                : flight.AvailableEconomySeats;
+
+            string prefix = seatClass == TicketSeatClass.Business ? "B" : "E";
+            string[] suffixes = { "A", "B", "C", "D", "E", "F" };
+
+            for (int row = 1; row <= totalSeats; row++)
+            {
+                foreach (string suffix in suffixes)
+                {
+                    string seat = $"{row}{suffix}";
+                    if (!takenSeats.Contains(seat))
+                        return seat;
+                }
+            }
+
+            return ""; // no seats available
+        }
+
+        private static LoyaltyTier GetUpdatedTier(int points)
+        {
+            if (points >= Constants.PlatinumThreshold) return LoyaltyTier.Platinum;
+            if (points >= Constants.GoldThreshold) return LoyaltyTier.Gold;
+            if (points >= Constants.SilverThreshold) return LoyaltyTier.Silver;
+            return LoyaltyTier.Bronze;
         }
     }
 
