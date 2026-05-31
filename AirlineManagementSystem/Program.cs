@@ -2342,7 +2342,6 @@ namespace AirlineManagementSystem
                 ? flight.AvailableBusinessSeats
                 : flight.AvailableEconomySeats;
 
-            string prefix = seatClass == TicketSeatClass.Business ? "B" : "E";
             string[] suffixes = { "A", "B", "C", "D", "E", "F" };
 
             for (int row = 1; row <= totalSeats; row++)
