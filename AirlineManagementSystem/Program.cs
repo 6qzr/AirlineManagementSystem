@@ -2173,10 +2173,32 @@ namespace AirlineManagementSystem
 
         public static void BookTicket(Passenger passenger, string outboundFlightNumber, bool roundTrip, string returnFlightNumber, TicketSeatClass seatClass)
         {
-            // Book outbound ticket
-            BookSingleTicket(passenger, outboundFlightNumber, seatClass);
+            Flight outbound = DataStore.Flights[outboundFlightNumber];
 
-            // Book return ticket if round trip
+            // Show both flights before confirming
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine($"\n  Outbound: {outboundFlightNumber} | {outbound.OriginAirportCode} → {outbound.DestinationAirportCode} | {outbound.ScheduledDeparture:yyyy-MM-dd HH:mm}");
+
+            if (roundTrip && !string.IsNullOrEmpty(returnFlightNumber))
+            {
+                Flight ret = DataStore.Flights[returnFlightNumber];
+                Console.WriteLine($"  Return:   {returnFlightNumber} | {ret.OriginAirportCode} → {ret.DestinationAirportCode} | {ret.ScheduledDeparture:yyyy-MM-dd HH:mm}");
+            }
+
+            // Single confirmation
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.Write("\n  Confirm booking? [y/n]: ");
+            Console.ResetColor();
+            if (Console.ReadLine().ToLower() != "y")
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n  Booking cancelled. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            BookSingleTicket(passenger, outboundFlightNumber, seatClass);
             if (roundTrip && !string.IsNullOrEmpty(returnFlightNumber))
                 BookSingleTicket(passenger, returnFlightNumber, seatClass);
         }
