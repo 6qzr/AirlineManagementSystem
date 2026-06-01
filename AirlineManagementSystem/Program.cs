@@ -1619,7 +1619,74 @@ namespace AirlineManagementSystem
 
         public static void SetActualTimes()
         {
+            while (true)
+            {
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Enter flight number (0 to cancel): ");
+                Console.ResetColor();
+                string flightNumber = Console.ReadLine();
+                if (flightNumber == "0") return;
 
+                if (!DataStore.Flights.ContainsKey(flightNumber))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid flight number. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                Flight flight = DataStore.Flights[flightNumber];
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Enter actual departure datetime (yyyy-MM-dd HH:mm): ");
+                Console.ResetColor();
+                string actDepDate = Console.ReadLine();
+
+                if(!DateTime.TryParse(actDepDate, out DateTime depTime))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid date format. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Enter actual arrival datetime (yyyy-MM-dd HH:mm): ");
+                Console.ResetColor();
+                string actArrDate = Console.ReadLine();
+
+                if (!DateTime.TryParse(actArrDate, out DateTime arrTime))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid date format. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                if (arrTime <= depTime)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Arrival time must be after departure time. Press Enter.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                flight.ActualDeparture = depTime;
+                flight.ActualArrival = arrTime;
+                   
+                DataStore.Flights[flightNumber] = flight;
+                CsvHelper.SaveFlights();
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("\n  Actual times updated successfully. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
         }
 
         public static void BulkUpdateStatus()
