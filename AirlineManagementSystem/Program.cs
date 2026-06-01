@@ -1689,9 +1689,100 @@ namespace AirlineManagementSystem
             }
         }
 
+        /*
+        * Allow updating flight status with appropriate transition rules (e.g., a Cancelled flight cannot be moved back to Scheduled)
+        */
+        private static bool IsValidTransition(FlightStatus current, FlightStatus next)
+        {
+            if (current == FlightStatus.Cancelled) return false;
+            if (current == FlightStatus.Arrived) return false;
+            if (current == FlightStatus.Departed && next != FlightStatus.Arrived) return false;
+            return true;
+        }
+
         public static void BulkUpdateStatus()
         {
-            
+            while (true)
+            {
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Enter Airline ICAO code OR Aircraft Registeration Number (0 to cancel): ");
+                Console.ResetColor();
+                string input = Console.ReadLine().ToUpper();
+                if (input == "0") return;
+                else if (!DataStore.Airlines.ContainsKey(input) && !DataStore.Aircrafts.ContainsKey(input))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid ICAO code/Registeration Number. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n  Select new status:");
+                Console.WriteLine("  [1] Scheduled");
+                Console.WriteLine("  [2] Boarding");
+                Console.WriteLine("  [3] Departed");
+                Console.WriteLine("  [4] Arrived");
+                Console.WriteLine("  [5] Delayed");
+                Console.WriteLine("  [6] Cancelled");
+                Console.ResetColor();
+
+                Console.Write("\n  Select: ");
+                FlightStatus parsedStatus;
+                switch (Console.ReadLine())
+                {
+                    case "1": parsedStatus = FlightStatus.Scheduled; break;
+                    case "2": parsedStatus = FlightStatus.Boarding; break;
+                    case "3": parsedStatus = FlightStatus.Departed; break;
+                    case "4": parsedStatus = FlightStatus.Arrived; break;
+                    case "5": parsedStatus = FlightStatus.Delayed; break;
+                    case "6": parsedStatus = FlightStatus.Cancelled; break;
+                    default:
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("\n  Invalid option. Press Enter.");
+                        Console.ResetColor();
+                        Console.ReadLine();
+                        continue;
+                }
+
+                List<Flight> flights = DataStore.Airlines.ContainsKey(input)
+                    ? DataStore.Flights.Values.Where(f => f.AirlineICAO == input).ToList()
+                    : DataStore.Flights.Values.Where(f => f.AircraftRegNumber == input).ToList();
+
+                int updatedCount = 0;
+                for (int i = 0; i < flights.Count; i++)
+                {
+                    Flight f = flights[i];
+                    if (!IsValidTransition(f.Status, parsedStatus))
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine($"\n  Cannot update {f.FlightNumber} from {f.Status} to {parsedStatus} — skipped.");
+                        Console.ResetColor();
+                        continue;
+                    }
+                    f.Status = parsedStatus;
+                    DataStore.Flights[f.FlightNumber] = f;
+                    updatedCount++;
+                }
+
+                if (flights.Count == 0)
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine("\n  No flights found for this airline/aircraft. Press Enter.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    return;
+                }
+
+                CsvHelper.SaveFlights();
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"\n  {updatedCount} flight(s) updated to {parsedStatus}. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
         }
 
         public static void ViewManifest()
@@ -1706,7 +1797,7 @@ namespace AirlineManagementSystem
 
         public static void ExportFlightReport()
         {
-
+            
         }
 
 
