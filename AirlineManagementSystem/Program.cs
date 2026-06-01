@@ -1850,7 +1850,70 @@ namespace AirlineManagementSystem
 
         public static void ViewCrewAssignment()
         {
+            while (true)
+            {
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Enter flight Number (0 to cancel): ");
+                Console.ResetColor();
+                string flightNumber = Console.ReadLine();
+                if (flightNumber == "0") return;
+                else if (!DataStore.Flights.ContainsKey(flightNumber))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid flight Number. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
 
+                var crewMembers = DataStore.FlightCrew
+                    .Where(fc => fc.FlightNumber == flightNumber)
+                    .Select(fc => DataStore.CrewMembers[fc.EmployeeID])
+                    .ToList();
+
+                if (crewMembers.Count == 0)
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine("\n  No crew found for this flight. Press Enter.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                Console.Clear();
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine($"  Crew Assignment View — Flight {flightNumber}");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine($"\n{"ID",-10} {"Name",-25} {"Role",-12} {"Nationality",-15} {"License",-15} {"Airline",-8} {"Exp",-5} {"Status"}");
+                Console.WriteLine(new string('-', 110));
+
+                foreach (CrewMember crew in crewMembers)
+                {
+                    Console.WriteLine(
+                        $"{crew.EmployeeID,-10} " +
+                        $"{crew.FullName,-25} " +
+                        $"{crew.Role,-12} " +
+                        $"{crew.Nationality,-15} " +
+                        $"{(string.IsNullOrEmpty(crew.LicenseNumber) ? "N/A" : crew.LicenseNumber),-15} " +
+                        $"{crew.AirlineICAO,-8} " +
+                        $"{crew.YearsOfExperience,-5} " +
+                        $"{(crew.IsAvailable ? "Available" : "Unavailable")}"
+                    );
+                }
+
+                Console.WriteLine(new string('-', 110));
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"  Total Crew Members: {crewMembers.Count}");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.WriteLine("\n  Press Enter to continue.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
         }
 
         public static void ExportFlightReport()
