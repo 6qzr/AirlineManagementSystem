@@ -1691,7 +1691,7 @@ namespace AirlineManagementSystem
 
         public static void BulkUpdateStatus()
         {
-
+            
         }
 
         public static void ViewManifest()
@@ -2980,9 +2980,12 @@ namespace AirlineManagementSystem
 
         public static void Show(Admin admin)
         {
-            ShowDashboard(admin); // show dashboard first on login
             while (true)
             {
+                Console.Clear();
+
+                ShowDashboard(admin); // show dashboard first on login
+
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("\n  [1] Flight Management");
                 Console.WriteLine("  [2] Ticket Price Calculator");
