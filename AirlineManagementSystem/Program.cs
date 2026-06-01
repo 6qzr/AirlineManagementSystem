@@ -1787,7 +1787,65 @@ namespace AirlineManagementSystem
 
         public static void ViewManifest()
         {
+            while (true)
+            {
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Enter flight Number (0 to cancel): ");
+                Console.ResetColor();
+                string flightNumber = Console.ReadLine();
+                if (flightNumber == "0") return;
+                else if (!DataStore.Flights.ContainsKey(flightNumber))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid flight Number. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
 
+                List<Ticket> tickets = DataStore.Tickets.Values
+                    .Where(t => t.FlightNumber == flightNumber)
+                    .OrderBy(t => t.SeatClass).ThenBy(t => t.SeatNumber)
+                    .ToList();
+
+                if (tickets.Count == 0)
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine("\n  No passengers found for this flight. Press Enter.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                Flight flight = DataStore.Flights[flightNumber];
+
+                Console.Clear();
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine($"  Passenger Manifest — Flight {flightNumber}");
+                Console.WriteLine($"  {flight.OriginAirportCode} => {flight.DestinationAirportCode} | {flight.ScheduledDeparture:yyyy-MM-dd HH:mm}");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine($"\n{"Seat",-8} {"Class",-12} {"Passenger",-25} {"Nationality",-15} {"Passport",-15} {"Status"}");
+                Console.WriteLine(new string('-', 90));
+
+                foreach (Ticket t in tickets)
+                {
+                    Passenger p = DataStore.Passengers[t.PassengerID];
+                    Console.WriteLine($"{t.SeatNumber,-8} {t.SeatClass,-12} {p.FullName,-25} {p.Nationality,-15} {p.PassportNumber,-15} {t.Status}");
+                }
+
+                Console.WriteLine(new string('-', 90));
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"  Total Passengers: {tickets.Count}");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.WriteLine("\n  Press Enter to continue.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
         }
 
         public static void ViewCrewAssignment()
