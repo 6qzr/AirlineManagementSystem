@@ -1,7 +1,4 @@
 ﻿using System.Text.RegularExpressions;
-using System.Xml.Linq;
-using static System.Collections.Specialized.BitVector32;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace AirlineManagementSystem
 {
@@ -1255,7 +1252,7 @@ namespace AirlineManagementSystem
 
                 Console.Write("\n  Enter your phone: ");
                 string phone = Console.ReadLine();
-                if (string.IsNullOrEmpty(phone)) 
+                if (string.IsNullOrEmpty(phone))
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine("\n  Phone cannot be empty. Press Enter to try again.");
@@ -1266,8 +1263,8 @@ namespace AirlineManagementSystem
 
                 Console.Write("\n  Enter your password: ");
                 string password = Console.ReadLine();
-                
-                if(!IsValidPassword(password))
+
+                if (!IsValidPassword(password))
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine("\n  Password must be with has digit, uppercase, special char, and length 8+ . Press Enter to try again.");
@@ -1448,7 +1445,7 @@ namespace AirlineManagementSystem
                     case "1":
                         seatClass = TicketSeatClass.Economy;
                         break;
-                    
+
                     case "2":
                         seatClass = TicketSeatClass.Business;
                         break;
@@ -1482,7 +1479,7 @@ namespace AirlineManagementSystem
                                     (maxPrice == 0 || f.BasePrice <= maxPrice))
                         .ToList();
                 }
-                
+
                 if (results.Count == 0)
                 {
                     Console.ForegroundColor = ConsoleColor.Yellow;
@@ -1599,6 +1596,124 @@ namespace AirlineManagementSystem
                 }
             }
         }
+
+        public static void AddFlight()
+        {
+
+        }
+
+        public static void ViewFlights()
+        {
+
+        }
+
+        public static void UpdateFlight()
+        {
+
+        }
+
+        public static void DeleteFlight()
+        {
+
+        }
+
+        public static void SetActualTimes()
+        {
+
+        }
+
+        public static void BulkUpdateStatus()
+        {
+
+        }
+
+        public static void ViewManifest()
+        {
+
+        }
+
+        public static void ViewCrewAssignment()
+        {
+
+        }
+
+        public static void ExportFlightReport()
+        {
+
+        }
+
+
+        public static void Show()
+        {
+            while (true)
+            {
+                Console.Clear();
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine("╔══════════════════════════════════════════╗");
+                Console.WriteLine("║             Flight Management            ║");
+                Console.WriteLine("╚══════════════════════════════════════════╝");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n  [1] Add New Flight");
+                Console.WriteLine("  [2] View Flights");
+                Console.WriteLine("  [3] Update Flight");
+                Console.WriteLine("  [4] Delete Flight");
+                Console.WriteLine("  [5] Set Actual Departure/Arrival");
+                Console.WriteLine("  [6] Bulk-Update Flight Status");
+                Console.WriteLine("  [7] Passenger Manifest");
+                Console.WriteLine("  [8] Crew Assignment View");
+                Console.WriteLine("  [9] Export Flight Report");
+                Console.WriteLine("  [0] Back to Admin Dashboard");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Select an option: ");
+                Console.ResetColor();
+
+                switch (Console.ReadLine())
+                {
+                    case "1":
+                        AddFlight();
+                        break;
+
+                    case "2":
+                        ViewFlights();
+                        break;
+
+                    case "3":
+                        UpdateFlight();
+                        break;
+
+                    case "4":
+                        DeleteFlight();
+                        break;
+
+                    case "5":
+                        SetActualTimes();
+                        break;
+
+                    case "6":
+                        BulkUpdateStatus();
+                        break;
+
+                    case "7":
+                        ViewManifest();
+                        break;
+
+                    case "8":
+                        ViewCrewAssignment();
+                        break;
+
+                    case "9":
+                        ExportFlightReport();
+                        break;
+
+                    case "0":
+                        return;
+                }
+            }
+        }
     }
 
     static class TicketService
@@ -1668,7 +1783,7 @@ namespace AirlineManagementSystem
             Ticket t = ticket.Value;
             Flight flight = DataStore.Flights[t.FlightNumber];
 
-            if(!(flight.ScheduledDeparture > DateTime.Now))
+            if (!(flight.ScheduledDeparture > DateTime.Now))
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("\n  Ticket cannot be cancelled. Flight already departed. Press Enter");
@@ -2818,28 +2933,28 @@ namespace AirlineManagementSystem
 
                 switch (Console.ReadLine())
                 {
-                    case "1": 
-                        //AirportService.Show();
+                    case "1":
+                        FlightService.Show();
                         break;
                     case "2":
                         CallTicketPriceCalculator();
                         break;
-                    case "3": 
+                    case "3":
                         //AircraftService.Show();
                         break;
                     case "4":
                         //FlightService.Show();
                         break;
-                    case "5": 
+                    case "5":
                         //PassengerService.Show();
                         break;
-                    case "6": 
+                    case "6":
                         //CrewService.Show();
                         break;
-                    case "7": 
+                    case "7":
                         //TicketService.Show();
                         break;
-                    case "0": 
+                    case "0":
                         AuthService.Logout(admin.AdminID, admin.FullName, "Admin");
                         return;
                     default:
@@ -2884,17 +2999,17 @@ namespace AirlineManagementSystem
 
                 switch (Console.ReadLine())
                 {
-                    case "1": 
+                    case "1":
                         FlightService.Search(passenger);
                         break;
                     case "2":
                         TicketService.ManageMyTickets(passenger);
                         break;
-                    case "3": 
-                        ShowProfile(passenger); 
+                    case "3":
+                        ShowProfile(passenger);
                         break;
-                    case "0": 
-                        AuthService.Logout(passenger.PassengerID, passenger.FullName, "Passenger"); 
+                    case "0":
+                        AuthService.Logout(passenger.PassengerID, passenger.FullName, "Passenger");
                         return;
                     default:
                         Console.ForegroundColor = ConsoleColor.Red;
