@@ -1801,25 +1801,23 @@ namespace AirlineManagementSystem
         private static void CancelFlightAndTickets(string flightNumber)
         {
             // Cancel all tickets
-            List<string> ticketIDs = DataStore.Tickets.Values
+            List<Ticket> tickets = DataStore.Tickets.Values
                 .Where(t => t.FlightNumber == flightNumber &&
                             t.Status != TicketStatus.Cancelled)
-                .Select(t => t.TicketID)
                 .ToList();
 
-            foreach (string id in ticketIDs)
+            foreach (Ticket ticket in tickets)
             {
-                Ticket t = DataStore.Tickets[id];
-
                 // Reverse loyalty points
-                Passenger p = DataStore.Passengers[t.PassengerID];
-                p.LoyaltyPoints -= t.LoyaltyPointsEarned;
+                Passenger p = DataStore.Passengers[ticket.PassengerID];
+                p.LoyaltyPoints -= ticket.LoyaltyPointsEarned;
                 p.TierStatus = TicketService.GetUpdatedTier(p.LoyaltyPoints);
-                DataStore.Passengers[t.PassengerID] = p;
+                DataStore.Passengers[ticket.PassengerID] = p;
 
-                // Cancel ticket
-                t.Status = TicketStatus.Cancelled;
-                DataStore.Tickets[id] = t;
+                // Cancel ticket — copy modify put back
+                Ticket updated = ticket;
+                updated.Status = TicketStatus.Cancelled;
+                DataStore.Tickets[updated.TicketID] = updated;
             }
 
             // Remove crew assignments
@@ -1870,13 +1868,22 @@ namespace AirlineManagementSystem
                     Console.WriteLine("\n  This flight has confirmed tickets.");
                     Console.WriteLine("  [1] Cancel flight and all related tickets");
                     Console.WriteLine("  [Enter] Abort");
-
+                    Console.ResetColor();
+                    
+                    Console.ForegroundColor = ConsoleColor.Gray;
                     Console.Write("\n  Select option: ");
+                    Console.ResetColor();
+
                     if (Console.ReadLine() == "1")
                     {
                         CancelFlightAndTickets(flightNumber);
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine("\n  Flight and all realted tickets cancelled. Press Enter.");
+                        Console.ResetColor();
+                        Console.ReadLine();
                     }
                 }
+                return;
             }
         }
 
@@ -1988,6 +1995,7 @@ namespace AirlineManagementSystem
                 Console.WriteLine("  [6] Cancelled");
                 Console.ResetColor();
 
+                Console.ForegroundColor = ConsoleColor.Gray;
                 Console.Write("\n  Select: ");
                 FlightStatus parsedStatus;
                 switch (Console.ReadLine())
