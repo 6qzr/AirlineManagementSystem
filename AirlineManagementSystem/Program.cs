@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Text;
+using System.Text.RegularExpressions;
 
 namespace AirlineManagementSystem
 {
@@ -1597,6 +1598,14 @@ namespace AirlineManagementSystem
             }
         }
 
+        private static string GetFlightNumber()
+        {
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("\n  Enter flight Number (0 to cancel): ");
+            Console.ResetColor();
+            return Console.ReadLine();
+        }
+
         public static void AddFlight()
         {
 
@@ -1621,10 +1630,7 @@ namespace AirlineManagementSystem
         {
             while (true)
             {
-                Console.ForegroundColor = ConsoleColor.Gray;
-                Console.Write("\n  Enter flight number (0 to cancel): ");
-                Console.ResetColor();
-                string flightNumber = Console.ReadLine();
+                string flightNumber = GetFlightNumber();
                 if (flightNumber == "0") return;
 
                 if (!DataStore.Flights.ContainsKey(flightNumber))
@@ -1785,14 +1791,20 @@ namespace AirlineManagementSystem
             }
         }
 
+        private static List<Ticket> GetFlightTickets(string flightNumber)
+        {
+            return DataStore.Tickets.Values
+                .Where(t => t.FlightNumber == flightNumber)
+                .OrderBy(t => t.SeatClass)
+                .ThenBy(t => t.SeatNumber)
+                .ToList();
+        }
+
         public static void ViewManifest()
         {
             while (true)
             {
-                Console.ForegroundColor = ConsoleColor.Gray;
-                Console.Write("\n  Enter flight Number (0 to cancel): ");
-                Console.ResetColor();
-                string flightNumber = Console.ReadLine();
+                string flightNumber = GetFlightNumber();
                 if (flightNumber == "0") return;
                 else if (!DataStore.Flights.ContainsKey(flightNumber))
                 {
@@ -1803,10 +1815,7 @@ namespace AirlineManagementSystem
                     continue;
                 }
 
-                List<Ticket> tickets = DataStore.Tickets.Values
-                    .Where(t => t.FlightNumber == flightNumber)
-                    .OrderBy(t => t.SeatClass).ThenBy(t => t.SeatNumber)
-                    .ToList();
+                List<Ticket> tickets = GetFlightTickets(flightNumber);
 
                 if (tickets.Count == 0)
                 {
@@ -1848,14 +1857,19 @@ namespace AirlineManagementSystem
             }
         }
 
+        private static List<CrewMember> GetFlightCrew(string flightNumber)
+        {
+            return DataStore.FlightCrew
+                .Where(fc => fc.FlightNumber == flightNumber)
+                .Select(fc => DataStore.CrewMembers[fc.EmployeeID])
+                .ToList();
+        }
+
         public static void ViewCrewAssignment()
         {
             while (true)
             {
-                Console.ForegroundColor = ConsoleColor.Gray;
-                Console.Write("\n  Enter flight Number (0 to cancel): ");
-                Console.ResetColor();
-                string flightNumber = Console.ReadLine();
+                string flightNumber = GetFlightNumber();
                 if (flightNumber == "0") return;
                 else if (!DataStore.Flights.ContainsKey(flightNumber))
                 {
@@ -1866,10 +1880,7 @@ namespace AirlineManagementSystem
                     continue;
                 }
 
-                var crewMembers = DataStore.FlightCrew
-                    .Where(fc => fc.FlightNumber == flightNumber)
-                    .Select(fc => DataStore.CrewMembers[fc.EmployeeID])
-                    .ToList();
+                List <CrewMember> crewMembers = GetFlightCrew(flightNumber);
 
                 if (crewMembers.Count == 0)
                 {
@@ -1920,7 +1931,6 @@ namespace AirlineManagementSystem
         {
             
         }
-
 
         public static void Show()
         {
