@@ -1798,9 +1798,86 @@ namespace AirlineManagementSystem
             }
         }
 
+        private static void CancelFlightAndTickets(string flightNumber)
+        {
+            // Cancel all tickets
+            List<string> ticketIDs = DataStore.Tickets.Values
+                .Where(t => t.FlightNumber == flightNumber &&
+                            t.Status != TicketStatus.Cancelled)
+                .Select(t => t.TicketID)
+                .ToList();
+
+            foreach (string id in ticketIDs)
+            {
+                Ticket t = DataStore.Tickets[id];
+
+                // Reverse loyalty points
+                Passenger p = DataStore.Passengers[t.PassengerID];
+                p.LoyaltyPoints -= t.LoyaltyPointsEarned;
+                p.TierStatus = TicketService.GetUpdatedTier(p.LoyaltyPoints);
+                DataStore.Passengers[t.PassengerID] = p;
+
+                // Cancel ticket
+                t.Status = TicketStatus.Cancelled;
+                DataStore.Tickets[id] = t;
+            }
+
+            // Remove crew assignments
+            DataStore.FlightCrew.RemoveAll(fc => fc.FlightNumber == flightNumber);
+
+            // Cancel flight
+            Flight f = DataStore.Flights[flightNumber];
+            f.Status = FlightStatus.Cancelled;
+            f.AvailableBusinessSeats = 0;
+            f.AvailableEconomySeats = 0;
+            DataStore.Flights[flightNumber] = f;
+
+            // Save everything
+            CsvHelper.SaveFlights();
+            CsvHelper.SaveTickets();
+            CsvHelper.SavePassengers();
+            CsvHelper.SaveFlightCrew();
+        }
+
         public static void DeleteFlight()
         {
+            while (true)
+            {
+                string flightNumber = GetFlightNumber();
 
+                if (flightNumber == "0")
+                    return;
+
+                if (!DataStore.Flights.ContainsKey(flightNumber))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid flight Number. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                Flight flight = DataStore.Flights[flightNumber];
+
+                bool hasTickets = DataStore.Tickets.Values
+                    .Any(t => t.FlightNumber == flightNumber &&
+                              t.Status != TicketStatus.Cancelled);
+
+                if (hasTickets)
+                {
+                    // 3. Warn admin and offer cancel instead
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine("\n  This flight has confirmed tickets.");
+                    Console.WriteLine("  [1] Cancel flight and all related tickets");
+                    Console.WriteLine("  [Enter] Abort");
+
+                    Console.Write("\n  Select option: ");
+                    if (Console.ReadLine() == "1")
+                    {
+                        CancelFlightAndTickets(flightNumber);
+                    }
+                }
+            }
         }
 
         public static void SetActualTimes()
@@ -3059,7 +3136,7 @@ namespace AirlineManagementSystem
             return ""; // no seats available
         }
 
-        private static LoyaltyTier GetUpdatedTier(int points)
+        public static LoyaltyTier GetUpdatedTier(int points)
         {
             if (points >= Constants.PlatinumThreshold) return LoyaltyTier.Platinum;
             if (points >= Constants.GoldThreshold) return LoyaltyTier.Gold;
