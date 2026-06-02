@@ -1676,7 +1676,126 @@ namespace AirlineManagementSystem
 
         public static void UpdateFlight()
         {
+            while (true)
+            {
+                string flightNumber = GetFlightNumber();
 
+                if (flightNumber == "0")
+                    return;
+
+                if (!DataStore.Flights.ContainsKey(flightNumber))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid flight Number. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                Flight flight = DataStore.Flights[flightNumber];
+
+                while (true)
+                {
+                    Console.Clear();
+
+                    Console.ForegroundColor = ConsoleColor.Cyan;
+                    Console.WriteLine($"  Update Flight - {flight.FlightNumber}");
+                    Console.ResetColor();
+
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine($"\n  [1] Origin Airport ({flight.OriginAirportCode})");
+                    Console.WriteLine($"  [2] Destination Airport ({flight.DestinationAirportCode})");
+                    Console.WriteLine($"  [3] Scheduled Departure ({flight.ScheduledDeparture:yyyy-MM-dd HH:mm})");
+                    Console.WriteLine($"  [4] Scheduled Arrival ({flight.ScheduledArrival:yyyy-MM-dd HH:mm})");
+                    Console.WriteLine($"  [5] Status ({flight.Status})");
+                    Console.WriteLine($"  [6] Business Seats ({flight.AvailableBusinessSeats})");
+                    Console.WriteLine($"  [7] Economy Seats ({flight.AvailableEconomySeats})");
+                    Console.WriteLine($"  [8] Base Price ({flight.BasePrice:0.00})");
+                    Console.WriteLine("  [0] Back");
+                    Console.ResetColor();
+
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                    Console.Write("\n  Select a field to update: ");
+                    Console.ResetColor();
+
+                    switch (Console.ReadLine())
+                    {
+                        case "1":
+                            Console.Write("  New Origin Airport: ");
+                            string orgAirportCode = Console.ReadLine().Trim().ToUpper();
+
+                            if (!DataStore.Airports.ContainsKey(orgAirportCode))
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("  Airport does not exist. Press Enter.");
+                                Console.ResetColor();
+                                Console.ReadLine();
+                                break;
+                            }
+
+                            flight.OriginAirportCode = orgAirportCode;
+                            break;
+
+                        case "2":
+                            Console.Write("  New Destination Airport: ");
+                            string destAirportCode = Console.ReadLine().Trim().ToUpper();
+
+                            if (!DataStore.Airports.ContainsKey(destAirportCode))
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("  Airport does not exist. Press Enter.");
+                                Console.ResetColor();
+                                Console.ReadLine();
+                                break;
+                            }
+
+                            flight.DestinationAirportCode = destAirportCode;
+                            break;
+
+                        case "3":
+                            Console.Write("  New Scheduled Departure (yyyy-MM-dd HH:mm): ");
+                            if (DateTime.TryParse(Console.ReadLine(), out DateTime dep))
+                                flight.ScheduledDeparture = dep;
+                            break;
+
+                        case "4":
+                            Console.Write("  New Scheduled Arrival (yyyy-MM-dd HH:mm): ");
+                            if (DateTime.TryParse(Console.ReadLine(), out DateTime arr))
+                                flight.ScheduledArrival = arr;
+                            break;
+
+                        case "5":
+                            Console.Write("  New Status : ");
+                            if (Enum.TryParse(Console.ReadLine(), true, out FlightStatus status))
+                                flight.Status = status;
+                            break;
+
+                        case "6":
+                            Console.Write("  New Business Seats: ");
+                            if (int.TryParse(Console.ReadLine(), out int bizSeats))
+                                flight.AvailableBusinessSeats = bizSeats;
+                            break;
+
+                        case "7":
+                            Console.Write("  New Economy Seats: ");
+                            if (int.TryParse(Console.ReadLine(), out int ecoSeats))
+                                flight.AvailableEconomySeats = ecoSeats;
+                            break;
+
+                        case "8":
+                            Console.Write("  New Base Price: ");
+                            if (decimal.TryParse(Console.ReadLine(), out decimal price))
+                                flight.BasePrice = price;
+                            break;
+
+                        case "0":
+                            CsvHelper.SaveFlights();
+                            return;
+                    }
+
+                    DataStore.Flights[flightNumber] = flight;
+                }
+            }
         }
 
         public static void DeleteFlight()
