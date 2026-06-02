@@ -1,0 +1,27 @@
+========================================
+FLIGHT REPORT
+========================================
+
+FLIGHT DETAILS
+Flight Number: WY101
+Origin: MCT
+Destination: DXB
+Departure: 6/15/2026 8:00:00 AM
+Arrival: 6/15/2026 10:00:00 AM
+Status: Scheduled
+
+PASSENGER MANIFEST
+Seat     Class        Passenger                
+----------------------------------------
+12A      Economy      Ahmed Al Rashdi          
+
+Total Passengers: 1
+
+CREW LIST
+ID         Name                      Role        
+----------------------------------------
+CR00001    Khalid Al Amri            Pilot       
+CR00002    Noor Al Habsi             CoPilot     
+CR00003    Mohammed Al Farsi         CabinCrew   
+
+Total Crew: 3

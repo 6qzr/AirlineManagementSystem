@@ -1603,7 +1603,7 @@ namespace AirlineManagementSystem
             Console.ForegroundColor = ConsoleColor.Gray;
             Console.Write("\n  Enter flight Number (0 to cancel): ");
             Console.ResetColor();
-            return Console.ReadLine();
+            return Console.ReadLine().ToUpper();
         }
 
         public static void AddFlight()
@@ -1929,7 +1929,84 @@ namespace AirlineManagementSystem
 
         public static void ExportFlightReport()
         {
-            
+            while (true)
+            {
+                string flightNumber = GetFlightNumber();
+                if (flightNumber == "0") return;
+                else if (!DataStore.Flights.ContainsKey(flightNumber))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid flight Number. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                Flight flight = DataStore.Flights[flightNumber];
+
+                var report = new StringBuilder();
+
+                report.AppendLine("========================================");
+                report.AppendLine("FLIGHT REPORT");
+                report.AppendLine("========================================");
+                report.AppendLine();
+                report.AppendLine("FLIGHT DETAILS");
+                report.AppendLine($"Flight Number: {flight.FlightNumber}");
+                report.AppendLine($"Origin: {flight.OriginAirportCode}");
+                report.AppendLine($"Destination: {flight.DestinationAirportCode}");
+                report.AppendLine($"Departure: {flight.ScheduledDeparture}");
+                report.AppendLine($"Arrival: {flight.ScheduledArrival}");
+                report.AppendLine($"Status: {flight.Status}");
+                report.AppendLine();
+                // Passenger Section
+                var tickets = GetFlightTickets(flightNumber);
+                report.AppendLine("PASSENGER MANIFEST");
+                report.AppendLine($"{"Seat",-8} {"Class",-12} {"Passenger",-25}");
+                report.AppendLine("----------------------------------------");
+                foreach (Ticket t in tickets)
+                {
+                    Passenger p = DataStore.Passengers[t.PassengerID];
+
+                    report.AppendLine(
+                        $"{t.SeatNumber,-8} " +
+                        $"{t.SeatClass,-12} " +
+                        $"{p.FullName,-25}"
+                    );
+                }
+                report.AppendLine();
+                report.AppendLine($"Total Passengers: {tickets.Count}");
+                report.AppendLine();
+                // Crew Section
+                var crewMembers = GetFlightCrew(flightNumber);
+                report.AppendLine("CREW LIST");
+                report.AppendLine($"{"ID",-10} {"Name",-25} {"Role",-12}");
+                report.AppendLine("----------------------------------------");
+                foreach (CrewMember crew in crewMembers)
+                {
+                    report.AppendLine(
+                        $"{crew.EmployeeID,-10} " +
+                        $"{crew.FullName,-25} " +
+                        $"{crew.Role,-12}"
+                    );
+                }
+                report.AppendLine();
+                report.AppendLine($"Total Crew: {crewMembers.Count}");
+
+                // Save Report
+                string reportsFolder = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Reports"));
+                Directory.CreateDirectory(reportsFolder);
+
+                string filePath = Path.Combine(
+                    reportsFolder,
+                    $"FlightReport_{flightNumber}_{DateTime.Now:yyyyMMdd_HHmmss}.txt"
+                );
+                File.WriteAllText(filePath, report.ToString());
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"\n  The report has been saved in {filePath}. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+            }
         }
 
         public static void Show()
