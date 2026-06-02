@@ -1615,7 +1615,63 @@ namespace AirlineManagementSystem
 
         public static void ViewFlights()
         {
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("\n  Enter flight Numbers separated by ',' (Enter to cancel): ");
+            Console.ResetColor();
 
+            string input = Console.ReadLine();
+
+            if (string.IsNullOrWhiteSpace(input))
+                return;
+
+            string[] flightNumbers = input
+                .ToUpper()
+                .Split(',')
+                .Select(x => x.Trim())
+                .ToArray();
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine(
+                $"\n  {"FlightNo",-10} {"Origin",-8} {"Destination",-12} {"Airline",-8} {"Aircraft",-12} " +
+                $"{"SchedDep",-20} {"SchedArr",-20} {"ActDep",-20} {"ActArr",-20} " +
+                $"{"Status",-10} {"Biz",-6} {"Eco",-6} {"Price",-8}"
+                );
+            Console.WriteLine(new string('-', 171));
+
+            foreach (string flightNumber in flightNumbers)
+            {
+                if (!DataStore.Flights.ContainsKey(flightNumber))
+                    continue;
+
+                Flight flight = DataStore.Flights[flightNumber];
+
+                string schedDep = flight.ScheduledDeparture.ToString("MM/dd HH:mm");
+                string schedArr = flight.ScheduledArrival.ToString("MM/dd HH:mm");
+
+                string actDep = flight.ActualDeparture?.ToString("MM/dd HH:mm") ?? "-";
+                string actArr = flight.ActualArrival?.ToString("MM/dd HH:mm") ?? "-";
+
+                Console.WriteLine(
+                    $"   {flight.FlightNumber,-10}" +
+                    $" {flight.OriginAirportCode,-8}" +
+                    $" {flight.DestinationAirportCode,-12}" +
+                    $" {flight.AirlineICAO,-8}" +
+                    $" {flight.AircraftRegNumber,-10}" +
+                    $" {schedDep,-20}" +
+                    $" {schedArr,-20}" +
+                    $" {actDep,-20}" +
+                    $" {actArr,-20}" +
+                    $" {flight.Status,-10}" +
+                    $" {flight.AvailableBusinessSeats,-6}" +
+                    $" {flight.AvailableEconomySeats,-6}" +
+                    $" {flight.BasePrice,-8:0.00}"
+                );
+            }
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("\n  Viewed selected flights. Press Enter.");
+            Console.ResetColor();
+            Console.ReadLine();
         }
 
         public static void UpdateFlight()
