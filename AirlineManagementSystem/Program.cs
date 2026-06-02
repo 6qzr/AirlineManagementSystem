@@ -194,6 +194,8 @@ namespace AirlineManagementSystem
         public static string SystemLogFile = Path.Combine(BaseDir, "system_log.csv");
         public static string ErrorLogFile = Path.Combine(BaseDir, "error_log.csv");
 
+        public static string reportsFolder = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Reports"));
+
         public const int MaxFailedLoginAttempts = 3;
         public const int LockoutMinutes = 15;
         public const int MinPasswordLength = 8;
@@ -1993,11 +1995,10 @@ namespace AirlineManagementSystem
                 report.AppendLine($"Total Crew: {crewMembers.Count}");
 
                 // Save Report
-                string reportsFolder = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Reports"));
-                Directory.CreateDirectory(reportsFolder);
+                Directory.CreateDirectory(Constants.reportsFolder);
 
                 string filePath = Path.Combine(
-                    reportsFolder,
+                    Constants.reportsFolder,
                     $"FlightReport_{flightNumber}_{DateTime.Now:yyyyMMdd_HHmmss}.txt"
                 );
                 File.WriteAllText(filePath, report.ToString());
