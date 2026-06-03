@@ -1818,6 +1818,18 @@ namespace AirlineManagementSystem
                 Ticket updated = ticket;
                 updated.Status = TicketStatus.Cancelled;
                 DataStore.Tickets[updated.TicketID] = updated;
+
+                // Cancel related baggage
+                for (int i = 0; i < DataStore.Baggages.Count; i++)
+                {
+                    if (DataStore.Baggages[i].TicketID == ticket.TicketID &&
+                        DataStore.Baggages[i].Status != BaggageStatus.Delivered)
+                    {
+                        Baggage b = DataStore.Baggages[i];
+                        b.Status = BaggageStatus.Delivered;
+                        DataStore.Baggages[i] = b;
+                    }
+                }
             }
 
             // Remove crew assignments
