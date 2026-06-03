@@ -1854,65 +1854,79 @@ namespace AirlineManagementSystem
             }
         }
 
-        public static void ViewFlights()
+        public static void ViewAllFlights()
         {
-            Console.ForegroundColor = ConsoleColor.Gray;
-            Console.Write("\n  Enter flight Numbers separated by ',' (Enter to cancel): ");
-            Console.ResetColor();
+            List<Flight> flights = DataStore.Flights.Values.ToList();
 
-            string input = Console.ReadLine();
-
-            if (string.IsNullOrWhiteSpace(input))
-                return;
-
-            string[] flightNumbers = input
-                .ToUpper()
-                .Split(',')
-                .Select(x => x.Trim())
-                .ToArray();
-
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine(
-                $"\n  {"FlightNo",-10} {"Origin",-8} {"Destination",-12} {"Airline",-8} {"Aircraft",-12} " +
-                $"{"SchedDep",-20} {"SchedArr",-20} {"ActDep",-20} {"ActArr",-20} " +
-                $"{"Status",-10} {"Biz",-6} {"Eco",-6} {"Price",-8}"
-                );
-            Console.WriteLine(new string('-', 171));
-
-            foreach (string flightNumber in flightNumbers)
+            if (flights.Count == 0)
             {
-                if (!DataStore.Flights.ContainsKey(flightNumber))
-                    continue;
-
-                Flight flight = DataStore.Flights[flightNumber];
-
-                string schedDep = flight.ScheduledDeparture.ToString("MM/dd HH:mm");
-                string schedArr = flight.ScheduledArrival.ToString("MM/dd HH:mm");
-
-                string actDep = flight.ActualDeparture?.ToString("MM/dd HH:mm") ?? "-";
-                string actArr = flight.ActualArrival?.ToString("MM/dd HH:mm") ?? "-";
-
-                Console.WriteLine(
-                    $"   {flight.FlightNumber,-10}" +
-                    $" {flight.OriginAirportCode,-8}" +
-                    $" {flight.DestinationAirportCode,-12}" +
-                    $" {flight.AirlineICAO,-8}" +
-                    $" {flight.AircraftRegNumber,-10}" +
-                    $" {schedDep,-20}" +
-                    $" {schedArr,-20}" +
-                    $" {actDep,-20}" +
-                    $" {actArr,-20}" +
-                    $" {flight.Status,-10}" +
-                    $" {flight.AvailableBusinessSeats,-6}" +
-                    $" {flight.AvailableEconomySeats,-6}" +
-                    $" {flight.BasePrice,-8:0.00}"
-                );
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\n  No flights found.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
             }
 
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("\n  Viewed selected flights. Press Enter.");
-            Console.ResetColor();
-            Console.ReadLine();
+            int totalPages = (int)Math.Ceiling(flights.Count / (double)Constants.PageSize);
+            int currentPage = 1;
+
+            while (true)
+            {
+                Console.Clear();
+                Console.WriteLine("\n  ---------- VIEW ALL FLIGHTS ----------");
+
+                List<Flight> pageItems = flights
+                    .Skip((currentPage - 1) * Constants.PageSize)
+                    .Take(Constants.PageSize)
+                    .ToList();
+
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine(
+                    $"\n  {"FlightNo",-10} {"Origin",-8} {"Destination",-12} {"Airline",-8} {"Aircraft",-12} " +
+                    $"{"SchedDep",-20} {"SchedArr",-20} {"ActDep",-20} {"ActArr",-20} " +
+                    $"{"Status",-10} {"Biz",-6} {"Eco",-6} {"Price",-8}"
+                );
+                Console.WriteLine(new string('-', 171));
+
+                foreach (Flight flight in pageItems)
+                {
+                    string schedDep = flight.ScheduledDeparture.ToString("MM/dd HH:mm");
+                    string schedArr = flight.ScheduledArrival.ToString("MM/dd HH:mm");
+                    string actDep = flight.ActualDeparture?.ToString("MM/dd HH:mm") ?? "-";
+                    string actArr = flight.ActualArrival?.ToString("MM/dd HH:mm") ?? "-";
+
+                    Console.WriteLine(
+                        $"   {flight.FlightNumber,-10}" +
+                        $" {flight.OriginAirportCode,-8}" +
+                        $" {flight.DestinationAirportCode,-12}" +
+                        $" {flight.AirlineICAO,-8}" +
+                        $" {flight.AircraftRegNumber,-10}" +
+                        $" {schedDep,-20}" +
+                        $" {schedArr,-20}" +
+                        $" {actDep,-20}" +
+                        $" {actArr,-20}" +
+                        $" {flight.Status,-10}" +
+                        $" {flight.AvailableBusinessSeats,-6}" +
+                        $" {flight.AvailableEconomySeats,-6}" +
+                        $" {flight.BasePrice,-8:0.00}"
+                    );
+                }
+
+                // Footer
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"\n  Page {currentPage} of {totalPages}  |  Total: {flights.Count} flights");
+                Console.WriteLine("  [N] Next   [P] Previous   [0] Back");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Choice: ");
+                Console.ResetColor();
+                string input = Console.ReadLine()?.Trim().ToUpper() ?? "";
+
+                if (input == "0") return;
+                else if (input == "N" && currentPage < totalPages) currentPage++;
+                else if (input == "P" && currentPage > 1) currentPage--;
+            }
         }
 
         public static void UpdateFlight()
@@ -2558,7 +2572,7 @@ namespace AirlineManagementSystem
                         break;
 
                     case "2":
-                        ViewFlights();
+                        ViewAllFlights();
                         break;
 
                     case "3":
