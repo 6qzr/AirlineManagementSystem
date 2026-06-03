@@ -1826,6 +1826,8 @@ namespace AirlineManagementSystem
                     BasePrice = basePrice
                 };
 
+                DataStore.Flights[flightNumber] = newFlight;
+
                 bool crewAssigned = CrewService.AssignCrewToFlight(flightNumber);
 
                 if (!crewAssigned)
@@ -1835,6 +1837,7 @@ namespace AirlineManagementSystem
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine("\n  Flight creation cancelled. No changes saved.");
                     Console.ResetColor();
+                    Console.ReadLine();
                     return;
                 }
 
@@ -1845,6 +1848,7 @@ namespace AirlineManagementSystem
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($"\n  Flight '{flightNumber}' created and crew assigned successfully.");
                 Console.ResetColor();
+                Console.ReadLine();
             }
         }
 
@@ -2621,7 +2625,7 @@ namespace AirlineManagementSystem
                                    DataStore.CrewMembers[fc.EmployeeID].Role == CrewMemberRole.CoPilot);
 
                 Console.ForegroundColor = ConsoleColor.Gray;
-                Console.Write("\n  Enter Employee ID to assign (or 0 to abort): ");
+                Console.Write("Employee ID (Enter to finish / 0 to cancel): ");
                 Console.ResetColor();
                 string input = Console.ReadLine()?.Trim().ToUpper() ?? "";
 
