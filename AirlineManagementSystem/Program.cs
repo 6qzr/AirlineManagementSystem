@@ -3525,9 +3525,71 @@ namespace AirlineManagementSystem
 
     static class PassengerService
     {
-        public static void ManagePassengers()
+        public static void Show()
         {
+            while (true)
+            {
+                Console.Clear();
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine("╔══════════════════════════════════════════╗");
+                Console.WriteLine("║           Passenger Management           ║");
+                Console.WriteLine("╚══════════════════════════════════════════╝");
+                Console.ResetColor();
 
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n  [1] Add New Passenger");
+                Console.WriteLine("  [2] View All Passengers");
+                Console.WriteLine("  [3] Update Passenger");
+                Console.WriteLine("  [4] Delete Passenger");
+                Console.WriteLine("  [5] Search Passengers");
+                Console.WriteLine("  [6] View Booking History");
+                Console.WriteLine("  [7] Adjust Loyalty Points");
+                Console.WriteLine("  [8] Loyalty Tier Report");
+                Console.WriteLine("  [0] Back to Admin Dashboard");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Select an option: ");
+                Console.ResetColor();
+
+                switch (Console.ReadLine())
+                {
+                    case "1":
+                        AddPassenger();
+                        break;
+
+                    case "2":
+                        ViewAllPassengers();
+                        break;
+
+                    case "3":
+                        UpdatePassenger();
+                        break;
+
+                    case "4":
+                        DeletePassenger();
+                        break;
+
+                    case "5":
+                        SearchPassengers();
+                        break;
+
+                    case "6":
+                        ViewBookingHistory();
+                        break;
+
+                    case "7":
+                        AdjustLoyaltyPoints();
+                        break;
+
+                    case "8":
+                        LoyaltyTierReport();
+                        break;
+
+                    case "0":
+                        return;
+                }
+            }
         }
 
         public static void AddPassenger()
@@ -3988,7 +4050,7 @@ namespace AirlineManagementSystem
                         CallTicketPriceCalculator();
                         break;
                     case "3":
-                        PassengerService.ManagePassengers();
+                        PassengerService.Show();
                         break;
                     case "4":
                         //FlightService.Show();
