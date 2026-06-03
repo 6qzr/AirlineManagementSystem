@@ -3523,6 +3523,54 @@ namespace AirlineManagementSystem
         }
     }
 
+    static class PassengerService
+    {
+        public static void ManagePassengers()
+        {
+
+        }
+
+        public static void AddPassenger()
+        {
+
+        }
+
+        public static void ViewAllPassengers()
+        {
+
+        }
+
+        public static void UpdatePassenger()
+        {
+
+        }
+
+        public static void DeletePassenger()
+        {
+
+        }
+
+        public static void SearchPassengers()
+        {
+
+        }
+
+        public static void ViewBookingHistory()
+        {
+
+        }
+
+        public static void AdjustLoyaltyPoints()
+        {
+
+        }
+
+        public static void LoyaltyTierReport()
+        {
+
+        }
+    }
+    
     static class AdminPortal
     {
         public static void CallTicketPriceCalculator()
@@ -3940,7 +3988,7 @@ namespace AirlineManagementSystem
                         CallTicketPriceCalculator();
                         break;
                     case "3":
-                        //AircraftService.Show();
+                        PassengerService.ManagePassengers();
                         break;
                     case "4":
                         //FlightService.Show();
