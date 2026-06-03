@@ -1610,7 +1610,7 @@ namespace AirlineManagementSystem
 
         public static void AddFlight()
         {
-
+            
         }
 
         public static void ViewFlights()
@@ -2352,6 +2352,125 @@ namespace AirlineManagementSystem
                         return;
                 }
             }
+        }
+    }
+
+    static class CrewService
+    {
+        public static bool AssignCrewToFlight(string flightNumber)
+        {
+            Console.WriteLine("\n  ----------- ASSIGN CREW -----------");
+
+            // Show available crew
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($"{"ID",-12} {"Name",-25} {"Role",-15}");
+            Console.WriteLine(new string('-', 52));
+            Console.ResetColor();
+
+            foreach (var crew in DataStore.CrewMembers.Values)
+            {
+                Console.WriteLine($"{crew.EmployeeID,-12} {crew.FullName,-25} {crew.Role,-15}");
+            }
+
+            Console.WriteLine();
+
+            // Track entries added this session so we can roll back if cancelled
+            List<FlightCrew> addedThisSession = new List<FlightCrew>();
+
+            bool addingMore = true;
+            while (addingMore)
+            {
+                bool hasPilot = DataStore.FlightCrew.Any(fc => fc.FlightNumber == flightNumber &&
+                                   DataStore.CrewMembers[fc.EmployeeID].Role == CrewMemberRole.Pilot);
+                bool hasCoPilot = DataStore.FlightCrew.Any(fc => fc.FlightNumber == flightNumber &&
+                                   DataStore.CrewMembers[fc.EmployeeID].Role == CrewMemberRole.CoPilot);
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Enter Employee ID to assign (or 0 to abort): ");
+                Console.ResetColor();
+                string input = Console.ReadLine()?.Trim().ToUpper() ?? "";
+
+                if (input == "0")
+                {
+                    // Roll back FlightCrew entries added this session
+                    foreach (var entry in addedThisSession)
+                        DataStore.FlightCrew.Remove(entry);
+
+                    return false;
+                }
+
+                if (string.IsNullOrEmpty(input))
+                {
+                    if (!hasPilot || !hasCoPilot)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("\n  A flight requires at least one Pilot and one CoPilot.");
+                        Console.ResetColor();
+                        Console.ReadLine();
+                        continue;
+                    }
+                    addingMore = false;
+                    continue;
+                }
+
+                if (!DataStore.CrewMembers.ContainsKey(input))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"\n  Employee '{input}' not found.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                // Duplicate check
+                bool alreadyAssigned = DataStore.FlightCrew
+                    .Any(fc => fc.FlightNumber == flightNumber && fc.EmployeeID == input);
+
+                if (alreadyAssigned)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  This crew member is already assigned to this flight.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                // Scheduling conflict — crew on another flight at the same time
+                Flight thisFlight = DataStore.Flights[flightNumber];
+                bool hasConflict = DataStore.FlightCrew
+                    .Where(fc => fc.EmployeeID == input && fc.FlightNumber != flightNumber)
+                    .Any(fc =>
+                    {
+                        Flight other = DataStore.Flights[fc.FlightNumber];
+                        return thisFlight.ScheduledDeparture < other.ScheduledArrival &&
+                               thisFlight.ScheduledArrival > other.ScheduledDeparture;
+                    });
+
+                if (hasConflict)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  This crew member has a scheduling conflict with another flight.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                FlightCrew assignment = new FlightCrew
+                {
+                    FlightNumber = flightNumber,
+                    EmployeeID = input
+                };
+
+                DataStore.FlightCrew.Add(assignment);
+                addedThisSession.Add(assignment);   // track for potential rollback
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"\n  Crew member '{input}' assigned successfully. Press Enter");
+                Console.ResetColor();
+                Console.ReadLine();
+            }
+
+            return true;
         }
     }
 
