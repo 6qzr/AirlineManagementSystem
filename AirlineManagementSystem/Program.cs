@@ -1610,7 +1610,242 @@ namespace AirlineManagementSystem
 
         public static void AddFlight()
         {
-            
+            while (true)
+            {
+                string flightNumber = GetFlightNumber();
+
+                if (flightNumber == "0")
+                    return;
+
+                if (string.IsNullOrEmpty(flightNumber))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Flight number cannot be empty.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                if (DataStore.Flights.ContainsKey(flightNumber))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Flight already exists. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                // --- Airline ---
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Airline ICAO Code: ");
+                Console.ResetColor();
+                string icaoCode = Console.ReadLine()?.Trim().ToUpper() ?? "";
+
+                if (!DataStore.Airlines.ContainsKey(icaoCode))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"\n  Airline '{icaoCode}' not found.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    return;
+                }
+
+                // --- Aircraft ---
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Aircraft Registration Number: ");
+                Console.ResetColor();
+                string regNumber = Console.ReadLine()?.Trim().ToUpper() ?? "";
+
+                if (!DataStore.Aircrafts.ContainsKey(regNumber))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"Aircraft '{regNumber}' not found.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    return;
+                }
+
+                if (DataStore.Aircrafts[regNumber].Status != AircraftStatus.Active)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Aircraft is not active.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    return;
+                }
+
+                // --- Origin Airport ---
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Origin IATA Code: ");
+                Console.ResetColor();
+                string origin = Console.ReadLine()?.Trim().ToUpper() ?? "";
+
+                if (!DataStore.Airports.ContainsKey(origin))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"\n  Airport '{origin}' not found.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    return;
+                }
+
+                // --- Destination Airport ---
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Destination IATA Code: ");
+                Console.ResetColor();
+                string destination = Console.ReadLine()?.Trim().ToUpper() ?? "";
+
+                if (!DataStore.Airports.ContainsKey(destination))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"\n  Airport '{destination}' not found.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    return;
+                }
+
+                if (destination == origin)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Origin and destination cannot be the same.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    return;
+                }
+
+                // --- Scheduled Departure ---
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Scheduled Departure (yyyy-MM-dd HH:mm): ");
+                Console.ResetColor();
+                string depInput = Console.ReadLine()?.Trim() ?? "";
+
+                if (!DateTime.TryParse(depInput, out DateTime scheduledDeparture))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid departure date format.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    return;
+                }
+
+                if (scheduledDeparture <= DateTime.Now)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Departure must be in the future.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    return;
+                }
+
+                // --- Scheduled Arrival ---
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Scheduled Arrival (yyyy-MM-dd HH:mm): ");
+                Console.ResetColor();
+                string arrInput = Console.ReadLine()?.Trim() ?? "";
+
+                if (!DateTime.TryParse(arrInput, out DateTime scheduledArrival))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid arrival date format.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    return;
+                }
+
+                if (scheduledArrival <= scheduledDeparture)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Arrival must be after departure.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    return;
+                }
+
+                // --- Seat Counts ---
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Total Economy Seats: ");
+                Console.ResetColor();
+                if (!int.TryParse(Console.ReadLine()?.Trim(), out int totalEconomy) || totalEconomy < 0)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid economy seat count.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    return;
+                }
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Total Business Seats: ");
+                Console.ResetColor();
+                if (!int.TryParse(Console.ReadLine()?.Trim(), out int totalBusiness) || totalBusiness < 0)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid business seat count.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    return;
+                }
+
+                if (totalEconomy + totalBusiness == 0)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Flight must have at least one seat.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    return;
+                }
+
+                // --- Base Price ---
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Base Price (Economy): ");
+                Console.ResetColor();
+                if (!decimal.TryParse(Console.ReadLine()?.Trim(), out decimal basePrice) || basePrice <= 0)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid base price.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    return;
+                }
+
+                // --- Build and Save ---
+                Flight newFlight = new Flight
+                {
+                    FlightNumber = flightNumber,
+                    AirlineICAO = icaoCode,
+                    AircraftRegNumber = regNumber,
+                    OriginAirportCode = origin,
+                    DestinationAirportCode = destination,
+                    ScheduledDeparture = scheduledDeparture,
+                    ScheduledArrival = scheduledArrival,
+                    ActualDeparture = null,
+                    ActualArrival = null,
+                    Status = FlightStatus.Scheduled,
+                    AvailableEconomySeats = totalEconomy,
+                    AvailableBusinessSeats = totalBusiness,
+                    BasePrice = basePrice
+                };
+
+                bool crewAssigned = CrewService.AssignCrewToFlight(flightNumber);
+
+                if (!crewAssigned)
+                {
+                    // Roll back — remove from DataStore without saving
+                    DataStore.Flights.Remove(flightNumber);
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Flight creation cancelled. No changes saved.");
+                    Console.ResetColor();
+                    return;
+                }
+
+                // --- Save both together only after crew is confirmed ---
+                CsvHelper.SaveFlights();
+                CsvHelper.SaveFlightCrew();
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"\n  Flight '{flightNumber}' created and crew assigned successfully.");
+                Console.ResetColor();
+            }
         }
 
         public static void ViewFlights()
