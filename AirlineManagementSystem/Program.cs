@@ -220,6 +220,8 @@ namespace AirlineManagementSystem
         public static readonly int[] PeakMonths = { 6, 7, 8, 12 };
 
         public const int PointsPerDollar = 1; // 1 point per $1 spent
+
+        public const int PageSize = 10;
     }
 
     static class DataStore
@@ -3592,14 +3594,79 @@ namespace AirlineManagementSystem
             }
         }
 
+        private static string GetPassengerID()
+        {
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("\n  Enter Passenger ID (0 to cancel): ");
+            Console.ResetColor();
+            return Console.ReadLine();
+        }
+
         public static void AddPassenger()
         {
-
+            
         }
 
         public static void ViewAllPassengers()
         {
+            List<Passenger> passengers = DataStore.Passengers.Values.ToList();
 
+            if (passengers.Count == 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\n  No passengers found.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            int totalPages = (int)Math.Ceiling(passengers.Count / (double)Constants.PageSize);
+            int currentPage = 1;
+
+            while (true)
+            {
+                Console.Clear();
+                Console.WriteLine("\n  ---------- VIEW ALL PASSENGERS ----------");
+
+                List<Passenger> pageItems = passengers
+                    .Skip((currentPage - 1) * Constants.PageSize)
+                    .Take(Constants.PageSize)
+                    .ToList();
+
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine(
+                    $"\n  {"ID",-10} {"Full Name",-25} {"Email",-30} {"Passport",-15} " +
+                    $"{"Nationality",-15} {"Tier",-10} {"Points",-8}"
+                );
+                Console.WriteLine(new string('-', 120));
+
+                foreach (Passenger p in pageItems)
+                {
+                    Console.WriteLine(
+                        $"   {p.PassengerID,-10}" +
+                        $" {p.FullName,-25}" +
+                        $" {p.Email,-30}" +
+                        $" {p.PassportNumber,-15}" +
+                        $" {p.Nationality,-15}" +
+                        $" {p.TierStatus,-10}" +
+                        $" {p.LoyaltyPoints,-8}"
+                    );
+                }
+
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"\n  Page {currentPage} of {totalPages}  |  Total: {passengers.Count} passengers");
+                Console.WriteLine("  [N] Next   [P] Previous   [0] Back");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Choice: ");
+                Console.ResetColor();
+                string input = Console.ReadLine()?.Trim().ToUpper() ?? "";
+
+                if (input == "0") return;
+                else if (input == "N" && currentPage < totalPages) currentPage++;
+                else if (input == "P" && currentPage > 1) currentPage--;
+            }
         }
 
         public static void UpdatePassenger()
