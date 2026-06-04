@@ -4048,7 +4048,238 @@ namespace AirlineManagementSystem
 
         public static void SearchPassengers()
         {
+            List<Passenger> passengers;
+            while (true)
+            {
+                Console.Clear();
+                Console.WriteLine("╔══════════════════════════════════════════════════════════════╗");
+                Console.WriteLine("║                        Search Passenger                      ║");
+                Console.WriteLine("╚══════════════════════════════════════════════════════════════╝");
 
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine("\n  By:");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("  [1] Full Name");
+                Console.WriteLine("  [2] Email");
+                Console.WriteLine("  [3] Passport Number");
+                Console.WriteLine("  [4] Nationality");
+                Console.WriteLine("  [0] Back");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Select option: ");
+                Console.ResetColor();
+
+                switch (Console.ReadLine())
+                {
+                    case "1":
+                        Console.Write("  Enter Full Name: ");
+                        string fullName = Console.ReadLine()?.Trim();
+
+                        if (string.IsNullOrEmpty(fullName))
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("\n  Full Name cannot be empty. Press Enter.");
+                            Console.ResetColor();
+                            Console.ReadLine();
+                            break;
+                        }
+
+                        fullName = fullName.ToUpper();
+
+                        passengers = DataStore.Passengers.Values
+                            .Where(p => p.FullName.ToUpper().Contains(fullName))
+                            .ToList();
+
+                        if (passengers.Count == 0)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("\n  No passenger found. Press Enter.");
+                            Console.ResetColor();
+                            Console.ReadLine();
+                            break;
+                        }
+
+                        Console.ForegroundColor = ConsoleColor.White;
+                        Console.WriteLine(
+                            $"\n{"ID",-10} {"Full Name",-25} {"Email",-30} {"Passport",-15} {"Nationality",-15} {"Tier",-10} {"Points",-8}"
+                        );
+                        Console.WriteLine(new string('-', 120));
+
+                        foreach (Passenger p in passengers)
+                        {
+                            Console.WriteLine(
+                                $"{p.PassengerID,-10} " +
+                                $"{p.FullName,-25} " +
+                                $"{p.Email,-30} " +
+                                $"{p.PassportNumber,-15} " +
+                                $"{p.Nationality,-15} " +
+                                $"{p.TierStatus,-10} " +
+                                $"{p.LoyaltyPoints,-8}"
+                            );
+                        }
+
+                        Console.WriteLine("\n  Press Enter to continue...");
+                        Console.ReadLine();
+                        break;
+
+                    case "2":
+                        Console.Write("  Enter Email: ");
+                        string email = Console.ReadLine()?.Trim();
+
+                        if (string.IsNullOrEmpty(email))
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("\n  Email cannot be empty. Press Enter.");
+                            Console.ResetColor();
+                            Console.ReadLine();
+                            break;
+                        }
+
+                        email = email.ToUpper();
+
+                        passengers = DataStore.Passengers.Values
+                            .Where(p => p.Email.ToUpper() == email)
+                            .ToList();
+
+                        if (passengers.Count == 0)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("\n  No passenger found. Press Enter.");
+                            Console.ResetColor();
+                            Console.ReadLine();
+                            break;
+                        }
+
+                        Console.ForegroundColor = ConsoleColor.White;
+                        Console.WriteLine(
+                            $"\n{"ID",-10} {"Full Name",-25} {"Email",-30} {"Passport",-15} {"Nationality",-15} {"Tier",-10} {"Points",-8}"
+                        );
+                        Console.WriteLine(new string('-', 120));
+
+                        foreach (Passenger p in passengers)
+                        {
+                            Console.WriteLine(
+                                $"{p.PassengerID,-10} " +
+                                $"{p.FullName,-25} " +
+                                $"{p.Email,-30} " +
+                                $"{p.PassportNumber,-15} " +
+                                $"{p.Nationality,-15} " +
+                                $"{p.TierStatus,-10} " +
+                                $"{p.LoyaltyPoints,-8}"
+                            );
+                        }
+
+                        Console.WriteLine("\n  Press Enter to continue...");
+                        Console.ReadLine();
+                        break;
+
+                    case "3":
+                        Console.Write("  Enter Passport Number: ");
+                        string passNum = Console.ReadLine()?.Trim();
+
+                        if (string.IsNullOrEmpty(passNum))
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("\n  Passport Number cannot be empty. Press Enter.");
+                            Console.ResetColor();
+                            Console.ReadLine();
+                            break;
+                        }
+
+                        passengers = DataStore.Passengers.Values
+                            .Where(p => p.PassportNumber == passNum)
+                            .ToList();
+
+                        if (passengers.Count == 0)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("\n  No passenger found. Press Enter.");
+                            Console.ResetColor();
+                            Console.ReadLine();
+                            break;
+                        }
+
+                        Console.ForegroundColor = ConsoleColor.White;
+                        Console.WriteLine(
+                            $"\n{"ID",-10} {"Full Name",-25} {"Email",-30} {"Passport",-15} {"Nationality",-15} {"Tier",-10} {"Points",-8}"
+                        );
+                        Console.WriteLine(new string('-', 120));
+
+                        foreach (Passenger p in passengers)
+                        {
+                            Console.WriteLine(
+                                $"{p.PassengerID,-10} " +
+                                $"{p.FullName,-25} " +
+                                $"{p.Email,-30} " +
+                                $"{p.PassportNumber,-15} " +
+                                $"{p.Nationality,-15} " +
+                                $"{p.TierStatus,-10} " +
+                                $"{p.LoyaltyPoints,-8}"
+                            );
+                        }
+
+                        Console.WriteLine("\n  Press Enter to continue...");
+                        Console.ReadLine();
+                        break;
+
+                    case "4":
+                        Console.Write("  Enter Email: ");
+                        string Nationality = Console.ReadLine()?.Trim();
+
+                        if (string.IsNullOrEmpty(Nationality))
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("\n  Nationality cannot be empty. Press Enter.");
+                            Console.ResetColor();
+                            Console.ReadLine();
+                            break;
+                        }
+
+                        Nationality = Nationality.ToUpper();
+
+                        passengers = DataStore.Passengers.Values
+                            .Where(p => p.Nationality.ToUpper() == Nationality)
+                            .ToList();
+
+                        if (passengers.Count == 0)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("\n  No passenger found. Press Enter.");
+                            Console.ResetColor();
+                            Console.ReadLine();
+                            break;
+                        }
+
+                        Console.ForegroundColor = ConsoleColor.White;
+                        Console.WriteLine(
+                            $"\n{"ID",-10} {"Full Name",-25} {"Email",-30} {"Passport",-15} {"Nationality",-15} {"Tier",-10} {"Points",-8}"
+                        );
+                        Console.WriteLine(new string('-', 120));
+
+                        foreach (Passenger p in passengers)
+                        {
+                            Console.WriteLine(
+                                $"{p.PassengerID,-10} " +
+                                $"{p.FullName,-25} " +
+                                $"{p.Email,-30} " +
+                                $"{p.PassportNumber,-15} " +
+                                $"{p.Nationality,-15} " +
+                                $"{p.TierStatus,-10} " +
+                                $"{p.LoyaltyPoints,-8}"
+                            );
+                        }
+
+                        Console.WriteLine("\n  Press Enter to continue...");
+                        Console.ReadLine();
+                        break;
+
+                    case "0":
+                        return;
+                }
+            }
         }
 
         public static void ViewBookingHistory()
