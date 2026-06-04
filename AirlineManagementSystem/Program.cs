@@ -4284,7 +4284,38 @@ namespace AirlineManagementSystem
 
         public static void ViewBookingHistory()
         {
+            while (true)
+            {
+                string PassengerID = GetPassengerID();
 
+                if (PassengerID == "0")
+                    return;
+
+                if (!DataStore.Passengers.ContainsKey(PassengerID))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid Passenger ID. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                Passenger passenger = DataStore.Passengers[PassengerID];
+
+                Console.ForegroundColor = ConsoleColor.White;
+                // Get passenger's booking history
+                Console.WriteLine("\n============= Booking History ==============");
+                Console.WriteLine($"\n{"Ticket ID",-10} {"Flight",-8} {"From",-6} {"To",-6} {"Departure",-18} {"Class",-10} {"Status"}");
+                Console.WriteLine(new string('-', 75));
+                List<Ticket> bookingHistory = DataStore.Tickets.Values
+                    .Where(t => t.PassengerID == passenger.PassengerID)
+                    .ToList();
+                foreach (Ticket t in bookingHistory)
+                {
+                    Flight f = DataStore.Flights[t.FlightNumber];
+                    Console.WriteLine($"{t.TicketID,-10} {f.FlightNumber,-8} {f.OriginAirportCode,-6} {f.DestinationAirportCode,-6} {f.ScheduledDeparture.ToString("yyyy-MM-dd HH:mm"),-18} {t.SeatClass,-10} {t.Status}");
+                }
+            }
         }
 
         public static void AdjustLoyaltyPoints()
