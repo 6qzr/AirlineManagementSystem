@@ -3867,9 +3867,99 @@ namespace AirlineManagementSystem
             }
         }
 
+        public static void DeletePassengerAndTickets(string PassengerID)
+        {
+            // Cancel all tickets
+            List<Ticket> tickets = DataStore.Tickets.Values
+                .Where(t => t.PassengerID == PassengerID &&
+                            t.Status != TicketStatus.Cancelled)
+                .ToList();
+
+            foreach (Ticket ticket in tickets)
+            {
+                // Cancel ticket — copy modify put back
+                Ticket updated = ticket;
+                updated.Status = TicketStatus.Cancelled;
+                DataStore.Tickets[updated.TicketID] = updated;
+
+                // Update Flight available seats
+                Flight f = DataStore.Flights[ticket.FlightNumber];
+                if (ticket.SeatClass == TicketSeatClass.Economy)
+                    f.AvailableEconomySeats++;
+                else
+                    f.AvailableBusinessSeats++;
+                DataStore.Flights[ticket.FlightNumber] = f;
+
+                // Cancel related baggage
+                for (int i = 0; i < DataStore.Baggages.Count; i++)
+                {
+                    if (DataStore.Baggages[i].TicketID == ticket.TicketID &&
+                        DataStore.Baggages[i].Status != BaggageStatus.Delivered)
+                    {
+                        Baggage b = DataStore.Baggages[i];
+                        b.Status = BaggageStatus.Delivered;
+                        DataStore.Baggages[i] = b;
+                    }
+                }
+            }
+
+            // Delete Passenger
+            DataStore.Passengers.Remove(PassengerID);
+
+            // Save everything
+            CsvHelper.SaveFlights();
+            CsvHelper.SaveTickets();
+            CsvHelper.SaveBaggage();
+            CsvHelper.SavePassengers();
+        } 
+
         public static void DeletePassenger()
         {
+            while (true)
+            {
+                string PassengerID = GetPassengerID();
 
+                if (PassengerID == "0")
+                    return;
+
+                if (!DataStore.Passengers.ContainsKey(PassengerID))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid Passenger ID. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                bool hasTickets = DataStore.Tickets.Values
+                    .Any(t => t.PassengerID == PassengerID &&
+                              t.Status != TicketStatus.Cancelled);
+
+                if (hasTickets)
+                {
+                    // 3. Warn admin and offer cancel instead
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine("\n  This passenger has confirmed tickets.");
+                    Console.WriteLine("  [1] Delete passenger and all related tickets");
+                    Console.WriteLine("  [Enter] Abort");
+                    Console.ResetColor();
+
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                    Console.Write("\n  Select option: ");
+                    Console.ResetColor();
+
+                    if (Console.ReadLine()?.Trim() != "1")
+                        continue;
+                }
+
+                DeletePassengerAndTickets(PassengerID);
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("\n  Passenger and all related tickets deleted. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
         }
 
         public static void SearchPassengers()
