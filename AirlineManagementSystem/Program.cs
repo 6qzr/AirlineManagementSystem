@@ -3618,7 +3618,7 @@ namespace AirlineManagementSystem
 
         public static void AddPassenger()
         {
-            
+            AuthService.Register();
         }
 
         public static void ViewAllPassengers()
