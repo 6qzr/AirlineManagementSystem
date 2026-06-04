@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
+using System.Timers;
 
 namespace AirlineManagementSystem
 {
@@ -936,6 +937,25 @@ namespace AirlineManagementSystem
             File.Replace(tempFile, Constants.SystemLogFile, null);
         }
 
+        public static void WriteSystemLog(string userID, string userRole, string actionType, string entityAffected, string details)
+        {
+            string logID = $"SL{DataStore.SystemLogs.Count + 1:D4}";
+
+            SystemLog log = new SystemLog
+            {
+                LogID = logID,
+                Timestamp = DateTime.Now,
+                UserID = userID,
+                UserRole = userRole,
+                ActionType = actionType,
+                EntityAffected = entityAffected,
+                Details = details
+            };
+
+            DataStore.SystemLogs.Add(log);
+            SaveSystemLogs();
+        }
+
         // Save Error Logs
         public static void SaveErrorLogs()
         {
@@ -1857,6 +1877,9 @@ namespace AirlineManagementSystem
                 CsvHelper.SaveFlights();
                 CsvHelper.SaveFlightCrew();
 
+                // AddFlight
+                CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole, "CREATE", "Flight", $"Flight {flightNumber} created.");
+
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($"\n  Flight '{flightNumber}' created and crew assigned successfully.");
                 Console.ResetColor();
@@ -1983,12 +2006,14 @@ namespace AirlineManagementSystem
                     Console.Write("\n  Select a field to update: ");
                     Console.ResetColor();
 
-                    switch (Console.ReadLine())
+                    string choice = Console.ReadLine();
+                    string updatedField = "";
+
+                    switch (choice)
                     {
                         case "1":
                             Console.Write("  New Origin Airport: ");
                             string orgAirportCode = Console.ReadLine().Trim().ToUpper();
-
                             if (!DataStore.Airports.ContainsKey(orgAirportCode))
                             {
                                 Console.ForegroundColor = ConsoleColor.Red;
@@ -1997,14 +2022,13 @@ namespace AirlineManagementSystem
                                 Console.ReadLine();
                                 break;
                             }
-
                             flight.OriginAirportCode = orgAirportCode;
+                            updatedField = $"OriginAirportCode -> {orgAirportCode}";
                             break;
 
                         case "2":
                             Console.Write("  New Destination Airport: ");
                             string destAirportCode = Console.ReadLine().Trim().ToUpper();
-
                             if (!DataStore.Airports.ContainsKey(destAirportCode))
                             {
                                 Console.ForegroundColor = ConsoleColor.Red;
@@ -2013,44 +2037,62 @@ namespace AirlineManagementSystem
                                 Console.ReadLine();
                                 break;
                             }
-
                             flight.DestinationAirportCode = destAirportCode;
+                            updatedField = $"DestinationAirportCode -> {destAirportCode}";
                             break;
 
                         case "3":
                             Console.Write("  New Scheduled Departure (yyyy-MM-dd HH:mm): ");
                             if (DateTime.TryParse(Console.ReadLine(), out DateTime dep))
+                            {
                                 flight.ScheduledDeparture = dep;
+                                updatedField = $"ScheduledDeparture -> {dep:yyyy-MM-dd HH:mm}";
+                            }
                             break;
 
                         case "4":
                             Console.Write("  New Scheduled Arrival (yyyy-MM-dd HH:mm): ");
                             if (DateTime.TryParse(Console.ReadLine(), out DateTime arr))
+                            {
                                 flight.ScheduledArrival = arr;
+                                updatedField = $"ScheduledArrival -> {arr:yyyy-MM-dd HH:mm}";
+                            }
                             break;
 
                         case "5":
-                            Console.Write("  New Status : ");
+                            Console.Write("  New Status: ");
                             if (Enum.TryParse(Console.ReadLine(), true, out FlightStatus status))
+                            {
                                 flight.Status = status;
+                                updatedField = $"Status -> {status}";
+                            }
                             break;
 
                         case "6":
                             Console.Write("  New Business Seats: ");
                             if (int.TryParse(Console.ReadLine(), out int bizSeats))
+                            {
                                 flight.AvailableBusinessSeats = bizSeats;
+                                updatedField = $"AvailableBusinessSeats -> {bizSeats}";
+                            }
                             break;
 
                         case "7":
                             Console.Write("  New Economy Seats: ");
                             if (int.TryParse(Console.ReadLine(), out int ecoSeats))
+                            {
                                 flight.AvailableEconomySeats = ecoSeats;
+                                updatedField = $"AvailableEconomySeats -> {ecoSeats}";
+                            }
                             break;
 
                         case "8":
                             Console.Write("  New Base Price: ");
                             if (decimal.TryParse(Console.ReadLine(), out decimal price))
+                            {
                                 flight.BasePrice = price;
+                                updatedField = $"BasePrice -> {price:0.00}";
+                            }
                             break;
 
                         case "0":
@@ -2058,14 +2100,19 @@ namespace AirlineManagementSystem
                             return;
                     }
 
-                    DataStore.Flights[flightNumber] = flight;
+                    if (!string.IsNullOrEmpty(updatedField))
+                    {
+                        DataStore.Flights[flightNumber] = flight;
+                        // ++ system log
+                        CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole,
+                            "UPDATE", "Flight", $"Flight {flightNumber} updated: {updatedField}.");
+                    }
                 }
             }
         }
 
         private static void CancelFlightAndTickets(string flightNumber)
         {
-            // Cancel all tickets
             List<Ticket> tickets = DataStore.Tickets.Values
                 .Where(t => t.FlightNumber == flightNumber &&
                             t.Status != TicketStatus.Cancelled)
@@ -2073,18 +2120,15 @@ namespace AirlineManagementSystem
 
             foreach (Ticket ticket in tickets)
             {
-                // Reverse loyalty points
                 Passenger p = DataStore.Passengers[ticket.PassengerID];
                 p.LoyaltyPoints -= ticket.LoyaltyPointsEarned;
                 p.TierStatus = TicketService.GetUpdatedTier(p.LoyaltyPoints);
                 DataStore.Passengers[ticket.PassengerID] = p;
 
-                // Cancel ticket — copy modify put back
                 Ticket updated = ticket;
                 updated.Status = TicketStatus.Cancelled;
                 DataStore.Tickets[updated.TicketID] = updated;
 
-                // Cancel related baggage
                 for (int i = 0; i < DataStore.Baggages.Count; i++)
                 {
                     if (DataStore.Baggages[i].TicketID == ticket.TicketID &&
@@ -2097,21 +2141,22 @@ namespace AirlineManagementSystem
                 }
             }
 
-            // Remove crew assignments
             DataStore.FlightCrew.RemoveAll(fc => fc.FlightNumber == flightNumber);
 
-            // Cancel flight
             Flight f = DataStore.Flights[flightNumber];
             f.Status = FlightStatus.Cancelled;
             f.AvailableBusinessSeats = 0;
             f.AvailableEconomySeats = 0;
             DataStore.Flights[flightNumber] = f;
 
-            // Save everything
             CsvHelper.SaveFlights();
             CsvHelper.SaveTickets();
             CsvHelper.SavePassengers();
             CsvHelper.SaveFlightCrew();
+
+            // ++ system log
+            CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole,
+                "CANCEL", "Flight", $"Flight {flightNumber} cancelled with {tickets.Count} ticket(s) voided.");
         }
 
         public static void DeleteFlight()
@@ -2140,26 +2185,31 @@ namespace AirlineManagementSystem
 
                 if (hasTickets)
                 {
-                    // 3. Warn admin and offer cancel instead
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     Console.WriteLine("\n  This flight has confirmed tickets.");
                     Console.WriteLine("  [1] Cancel flight and all related tickets");
                     Console.WriteLine("  [Enter] Abort");
                     Console.ResetColor();
-                    
+
                     Console.ForegroundColor = ConsoleColor.Gray;
                     Console.Write("\n  Select option: ");
                     Console.ResetColor();
 
-                    if (Console.ReadLine() == "1")
+                    if (Console.ReadLine()?.Trim() != "1")
                     {
-                        CancelFlightAndTickets(flightNumber);
-                        Console.ForegroundColor = ConsoleColor.Green;
-                        Console.WriteLine("\n  Flight and all realted tickets cancelled. Press Enter.");
-                        Console.ResetColor();
-                        Console.ReadLine();
+                        // ++ system log — aborted
+                        CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole,
+                            "DELETE", "Flight", $"Flight {flightNumber} deletion aborted by admin.");
+                        return;
                     }
                 }
+
+                CancelFlightAndTickets(flightNumber);  // log is written inside here
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("\n  Flight and all related tickets cancelled. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
                 return;
             }
         }
@@ -2187,7 +2237,7 @@ namespace AirlineManagementSystem
                 Console.ResetColor();
                 string actDepDate = Console.ReadLine();
 
-                if(!DateTime.TryParse(actDepDate, out DateTime depTime))
+                if (!DateTime.TryParse(actDepDate, out DateTime depTime))
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine("\n  Invalid date format. Press Enter to try again.");
@@ -2221,9 +2271,14 @@ namespace AirlineManagementSystem
 
                 flight.ActualDeparture = depTime;
                 flight.ActualArrival = arrTime;
-                   
+
                 DataStore.Flights[flightNumber] = flight;
                 CsvHelper.SaveFlights();
+
+                // ++ system log
+                CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole,
+                    "UPDATE", "Flight",
+                    $"Flight {flightNumber} actual times set: Dep {depTime:yyyy-MM-dd HH:mm}, Arr {arrTime:yyyy-MM-dd HH:mm}.");
 
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine("\n  Actual times updated successfully. Press Enter.");
@@ -2249,14 +2304,15 @@ namespace AirlineManagementSystem
             while (true)
             {
                 Console.ForegroundColor = ConsoleColor.Gray;
-                Console.Write("\n  Enter Airline ICAO code OR Aircraft Registeration Number (0 to cancel): ");
+                Console.Write("\n  Enter Airline ICAO code OR Aircraft Registration Number (0 to cancel): ");
                 Console.ResetColor();
                 string input = Console.ReadLine().ToUpper();
                 if (input == "0") return;
-                else if (!DataStore.Airlines.ContainsKey(input) && !DataStore.Aircrafts.ContainsKey(input))
+
+                if (!DataStore.Airlines.ContainsKey(input) && !DataStore.Aircrafts.ContainsKey(input))
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("\n  Invalid ICAO code/Registeration Number. Press Enter to try again.");
+                    Console.WriteLine("\n  Invalid ICAO code/Registration Number. Press Enter to try again.");
                     Console.ResetColor();
                     Console.ReadLine();
                     continue;
@@ -2295,6 +2351,15 @@ namespace AirlineManagementSystem
                     ? DataStore.Flights.Values.Where(f => f.AirlineICAO == input).ToList()
                     : DataStore.Flights.Values.Where(f => f.AircraftRegNumber == input).ToList();
 
+                if (flights.Count == 0)
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine("\n  No flights found for this airline/aircraft. Press Enter.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    return;
+                }
+
                 int updatedCount = 0;
                 for (int i = 0; i < flights.Count; i++)
                 {
@@ -2311,16 +2376,12 @@ namespace AirlineManagementSystem
                     updatedCount++;
                 }
 
-                if (flights.Count == 0)
-                {
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine("\n  No flights found for this airline/aircraft. Press Enter.");
-                    Console.ResetColor();
-                    Console.ReadLine();
-                    return;
-                }
-
                 CsvHelper.SaveFlights();
+
+                // ++ system log
+                CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole,
+                    "UPDATE", "Flight",
+                    $"Bulk status update to {parsedStatus} for {input}: {updatedCount}/{flights.Count} flight(s) updated.");
 
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($"\n  {updatedCount} flight(s) updated to {parsedStatus}. Press Enter.");
@@ -2540,6 +2601,8 @@ namespace AirlineManagementSystem
                 );
                 File.WriteAllText(filePath, report.ToString());
 
+                CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole, "EXPORT", "Report", $"Flight report exported for {flightNumber}.");
+
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($"\n  The report has been saved in {filePath}. Press Enter.");
                 Console.ResetColor();
@@ -2728,6 +2791,9 @@ namespace AirlineManagementSystem
 
                 DataStore.FlightCrew.Add(assignment);
                 addedThisSession.Add(assignment);   // track for potential rollback
+
+                // AssignCrewToFlight
+                CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole, "ASSIGN", "FlightCrew", $"Crew {input} assigned to flight {flightNumber}.");
 
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($"\n  Crew member '{input}' assigned successfully. Press Enter");
@@ -3750,6 +3816,7 @@ namespace AirlineManagementSystem
                             }
 
                             passenger.FullName = fullName;
+                            CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole, "UPDATE", "Passenger", $"Passenger {PassengerID} field 'Full Name' updated.");
                             break;
 
                         case "2":
@@ -3775,6 +3842,7 @@ namespace AirlineManagementSystem
                             }
 
                             passenger.Email = email;
+                            CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole, "UPDATE", "Passenger", $"Passenger {PassengerID} field 'Email' updated.");
                             break;
 
                         case "3":
@@ -3800,6 +3868,7 @@ namespace AirlineManagementSystem
                             }
 
                             passenger.PassportNumber = passportNum;
+                            CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole, "UPDATE", "Passenger", $"Passenger {PassengerID} field 'Passport Number' updated.");
                             break;
 
                         case "4":
@@ -3816,6 +3885,7 @@ namespace AirlineManagementSystem
                             }
 
                             passenger.Nationality = nationality;
+                            CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole, "UPDATE", "Passenger", $"Passenger {PassengerID} field 'Nationality' updated.");
                             break;
 
                         case "5":
@@ -3841,6 +3911,7 @@ namespace AirlineManagementSystem
                             }
 
                             passenger.Phone = phoneNum;
+                            CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole, "UPDATE", "Passenger", $"Passenger {PassengerID} field 'Phone Number' updated.");
                             break;
 
                         case "6":
@@ -3865,6 +3936,7 @@ namespace AirlineManagementSystem
                             }
 
                             passenger.DateOfBirth = DOB;
+                            CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole, "UPDATE", "Passenger", $"Passenger {PassengerID} field 'Date of Birth' updated.");
                             break;
 
                         case "0":
@@ -3915,6 +3987,8 @@ namespace AirlineManagementSystem
 
             // Delete Passenger
             DataStore.Passengers.Remove(PassengerID);
+
+            CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole, "DELETE", "Passenger", $"Passenger {PassengerID} deleted with {tickets.Count} tickets cancelled.");
 
             // Save everything
             CsvHelper.SaveFlights();
