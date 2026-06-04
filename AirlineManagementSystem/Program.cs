@@ -959,6 +959,12 @@ namespace AirlineManagementSystem
 
     }
 
+    static class Session
+    {
+        public static string CurrentUserID = "";
+        public static string CurrentUserRole = "";  // "Admin" or "Passenger"
+    }
+
     static class AuthService
     {
         /* 
@@ -1071,6 +1077,8 @@ namespace AirlineManagementSystem
                         CsvHelper.SaveSystemLogs();
 
 
+                        Session.CurrentUserID = a.AdminID;
+                        Session.CurrentUserRole = "Admin";
                         AdminPortal.Show(a);
 
 
@@ -1131,6 +1139,8 @@ namespace AirlineManagementSystem
                         CsvHelper.SaveSystemLogs();
 
 
+                        Session.CurrentUserID = p.PassengerID;
+                        Session.CurrentUserRole = "Passenger";
                         PassengerPortal.Show(p);
 
 
