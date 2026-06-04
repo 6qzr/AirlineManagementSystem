@@ -3685,7 +3685,186 @@ namespace AirlineManagementSystem
 
         public static void UpdatePassenger()
         {
+            while (true)
+            {
+                string PassengerID = GetPassengerID();
 
+                if (PassengerID == "0")
+                    return;
+
+                if (!DataStore.Passengers.ContainsKey(PassengerID))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid Passenger ID. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                Passenger passenger = DataStore.Passengers[PassengerID];
+
+                while (true)
+                {
+                    Console.Clear();
+
+                    Console.ForegroundColor = ConsoleColor.Cyan;
+                    Console.WriteLine($"  Update Passenger - {passenger.FullName}: {passenger.PassengerID}");
+                    Console.ResetColor();
+
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine($"\n  [1] Full Name ({passenger.FullName})");
+                    Console.WriteLine($"  [2] Email ({passenger.Email})");
+                    Console.WriteLine($"  [3] Passport Number ({passenger.PassportNumber})");
+                    Console.WriteLine($"  [4] Nationality ({passenger.Nationality})");
+                    Console.WriteLine($"  [5] PhoneNumber ({passenger.Phone})");
+                    Console.WriteLine($"  [6] Date of Birth ({passenger.DateOfBirth})");
+                    Console.WriteLine("  [0] Back");
+                    Console.ResetColor();
+
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                    Console.Write("\n  Select a field to update: ");
+                    Console.ResetColor();
+
+                    switch (Console.ReadLine())
+                    {
+                        case "1":
+                            Console.Write("  New Full Name: ");
+                            string fullName = Console.ReadLine().Trim().ToUpper();
+                            if (string.IsNullOrEmpty(fullName))
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("\n  Full Name cannot be empty. Press Enter.");
+                                Console.ResetColor();
+                                Console.ReadLine();
+                                break;
+                            }
+
+                            passenger.FullName = fullName;
+                            break;
+
+                        case "2":
+                            Console.Write("  New Email: ");
+                            string email = Console.ReadLine().Trim().ToUpper();
+
+                            if (string.IsNullOrEmpty(email))
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("\n  Email cannot be empty. Press Enter.");
+                                Console.ResetColor();
+                                Console.ReadLine();
+                                break;
+                            }
+
+                            if (DataStore.Passengers.Values.Any(p => p.Email == email))
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("  Email is already used. Press Enter.");
+                                Console.ResetColor();
+                                Console.ReadLine();
+                                break;
+                            }
+
+                            passenger.Email = email;
+                            break;
+
+                        case "3":
+                            Console.Write("  New Passport Number: ");
+                            string passportNum = Console.ReadLine().Trim().ToUpper();
+
+                            if (string.IsNullOrEmpty(passportNum))
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("\n  Passport Number cannot be empty. Press Enter.");
+                                Console.ResetColor();
+                                Console.ReadLine();
+                                break;
+                            }
+
+                            if (DataStore.Passengers.Values.Any(p => p.PassportNumber == passportNum))
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("  Passport Number is already used. Press Enter.");
+                                Console.ResetColor();
+                                Console.ReadLine();
+                                break;
+                            }
+
+                            passenger.PassportNumber = passportNum;
+                            break;
+
+                        case "4":
+                            Console.Write("  New Nationality: ");
+                            string nationality = Console.ReadLine().Trim().ToUpper();
+                            
+                            if (string.IsNullOrEmpty(nationality))
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("\n  Nationality cannot be empty. Press Enter.");
+                                Console.ResetColor();
+                                Console.ReadLine();
+                                break;
+                            }
+
+                            passenger.Nationality = nationality;
+                            break;
+
+                        case "5":
+                            Console.Write("  New Phone Number: ");
+                            string phoneNum = Console.ReadLine().Trim().ToUpper();
+
+                            if (string.IsNullOrEmpty(phoneNum))
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("\n  Phone Number cannot be empty. Press Enter.");
+                                Console.ResetColor();
+                                Console.ReadLine();
+                                break;
+                            }
+
+                            if (DataStore.Passengers.Values.Any(p => p.Phone == phoneNum))
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("  Phone Number is already used. Press Enter.");
+                                Console.ResetColor();
+                                Console.ReadLine();
+                                break;
+                            }
+
+                            passenger.Phone = phoneNum;
+                            break;
+
+                        case "6":
+                            Console.Write("\n  New Date of Birth (yyyy-MM-dd): ");
+                            string dobInput = Console.ReadLine();
+                            if (string.IsNullOrEmpty(dobInput))
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("\n  Date of birth cannot be empty. Press Enter.");
+                                Console.ResetColor();
+                                Console.ReadLine();
+                                break;
+                            }
+                            // Parse safely
+                            if (!DateTime.TryParse(dobInput, out DateTime DOB))
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("\n  Invalid date format. Use yyyy-MM-dd. Press Enter to try again.");
+                                Console.ResetColor();
+                                Console.ReadLine();
+                                break;
+                            }
+
+                            passenger.DateOfBirth = DOB;
+                            break;
+
+                        case "0":
+                            CsvHelper.SavePassengers();
+                            return;
+                    }
+
+                    DataStore.Passengers[passenger.PassengerID] = passenger;
+                }
+            }
         }
 
         public static void DeletePassenger()
