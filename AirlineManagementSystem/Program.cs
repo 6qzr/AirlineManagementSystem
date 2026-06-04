@@ -4320,7 +4320,107 @@ namespace AirlineManagementSystem
 
         public static void AdjustLoyaltyPoints()
         {
+            while (true)
+            {
+                string passengerID = GetPassengerID();
 
+                if (passengerID == "0")
+                    return;
+
+                if (!DataStore.Passengers.ContainsKey(passengerID))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid Passenger ID. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                Passenger passenger = DataStore.Passengers[passengerID];
+
+                // Show current state
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine($"\n  Passenger : {passenger.FullName}");
+                Console.WriteLine($"  Current Points : {passenger.LoyaltyPoints}");
+                Console.WriteLine($"  Current Tier   : {passenger.TierStatus}");
+                Console.ResetColor();
+
+                // Adjustment amount (positive or negative)
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Enter adjustment amount (+/-): ");
+                Console.ResetColor();
+                if (!int.TryParse(Console.ReadLine(), out int adjustment))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid amount. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                int newPoints = passenger.LoyaltyPoints + adjustment;
+
+                // Floor at 0
+                if (newPoints < 0)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"\n  Adjustment would result in negative points ({newPoints}). Press Enter.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                // Reason note
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("  Reason: ");
+                Console.ResetColor();
+                string reason = Console.ReadLine()?.Trim() ?? "";
+
+                if (string.IsNullOrEmpty(reason))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Reason is required. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                // Apply
+                int oldPoints = passenger.LoyaltyPoints;
+                LoyaltyTier oldTier = passenger.TierStatus;
+
+                passenger.LoyaltyPoints = newPoints;
+                passenger.TierStatus = TicketService.GetUpdatedTier(newPoints);
+                DataStore.Passengers[passengerID] = passenger;
+
+                // Loyalty log entry
+                LoyaltyLog log = new LoyaltyLog
+                {
+                    LogID = $"LL{DataStore.LoyaltyLogs.Count + 1:D4}",
+                    PassengerID = passengerID,
+                    PointsChanged = adjustment,
+                    Reason = "By Admin: " + reason,
+                    TransactionDate = DateTime.Now
+                };
+                DataStore.LoyaltyLogs.Add(log);
+
+                CsvHelper.SavePassengers();
+                CsvHelper.SaveLoyaltyLogs();
+
+                // System log
+                CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole,
+                    "ADJUST", "Passenger",
+                    $"Passenger {passengerID} points adjusted by {adjustment} ({oldPoints} -> {newPoints}). " +
+                    $"Tier: {oldTier} -> {passenger.TierStatus}. Reason: {reason}.");
+
+                // Confirm
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"\n  Points updated: {oldPoints} => {newPoints}  |  Tier: {oldTier} => {passenger.TierStatus}");
+                Console.WriteLine("  Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
         }
 
         public static void ExportLoyaltyTierReport(LoyaltyTier tier)
