@@ -1,0 +1,9 @@
+========================================
+LOYALTY TIER REPORT - Passengers Details
+========================================
+
+ID         Full Name                 Email                          Passport        Nationality     Tier       Points  
+P00002     Sara Al Balushi           sara@email.com                 OM2345678       Omani           Bronze     300     
+P00005     John Carter               john@email.com                 US5678901       American        Bronze     0       
+
+Total Passengers: 2

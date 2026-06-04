@@ -4323,9 +4323,89 @@ namespace AirlineManagementSystem
 
         }
 
+        public static void ExportLoyaltyTierReport(LoyaltyTier tier)
+        {
+            var report = new StringBuilder();
+
+            List<Passenger> passengers = DataStore.Passengers.Values
+                .Where(p => p.TierStatus == tier)
+                .ToList();
+
+            report.AppendLine("========================================");
+            report.AppendLine("LOYALTY TIER REPORT - Passengers Details");
+            report.AppendLine("========================================");
+
+            report.AppendLine(
+                $"\n{"ID",-10} {"Full Name",-25} {"Email",-30} {"Passport",-15} {"Nationality",-15} {"Tier",-10} {"Points",-8}"
+            );
+            Console.WriteLine(new string('-', 120));
+            foreach (Passenger p in passengers)
+            {
+                
+                report.AppendLine(
+                    $"{p.PassengerID,-10} " +
+                    $"{p.FullName,-25} " +
+                    $"{p.Email,-30} " +
+                    $"{p.PassportNumber,-15} " +
+                    $"{p.Nationality,-15} " +
+                    $"{p.TierStatus,-10} " +
+                    $"{p.LoyaltyPoints,-8}"
+                );
+            }
+            report.AppendLine();
+            report.AppendLine($"Total Passengers: {passengers.Count}");
+
+            // Save Report
+            Directory.CreateDirectory(Constants.reportsFolder);
+
+            string filePath = Path.Combine(
+                Constants.reportsFolder,
+                $"LoyaltyTierReport_{tier}_{DateTime.Now:yyyyMMdd_HHmmss}.txt"
+            );
+            File.WriteAllText(filePath, report.ToString());
+
+            CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole, "EXPORT", "Report", $"Loyalty Tier report exported for {tier}.");
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"\n  The report has been saved in {filePath}. Press Enter.");
+            Console.ResetColor();
+            Console.ReadLine();
+        }
+
         public static void LoyaltyTierReport()
         {
+            while (true)
+            {
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Enter Loyalty Tier  (0 to cancel): ");
+                Console.ResetColor();
+                string tier = Console.ReadLine()?.Trim().ToUpper();
 
+                switch (tier)
+                {
+                    case "BRONZE":
+                        ExportLoyaltyTierReport(LoyaltyTier.Bronze);
+                        break;
+                    case "SILVER":
+                        ExportLoyaltyTierReport(LoyaltyTier.Silver);
+                        break;
+                    case "GOLD":
+                        ExportLoyaltyTierReport(LoyaltyTier.Gold);
+                        break;
+                    case "PLATINUM":
+                        ExportLoyaltyTierReport(LoyaltyTier.Platinum);
+                        break;
+                    case "0":
+                        return;
+                    
+                    default:
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("\n  Invalid Loyalty Tier. Press Enter to try again.");
+                        Console.ResetColor();
+                        Console.ReadLine();
+                        continue;
+                }
+            }
         }
     }
     
