@@ -459,8 +459,8 @@ namespace AirlineManagementSystem
             }
         }
 
-        //Reads baggage.csv
-        public static void LoadBaggage()
+        //Reads baggages.csv
+        public static void LoadBaggages()
         {
             using (StreamReader sr = new StreamReader(Constants.BaggagesFile))
             {
@@ -601,8 +601,8 @@ namespace AirlineManagementSystem
         /* 
         * ============== Save CSVs ==============
         */
-        // Save Airport
-        public static void SaveAirport()
+        // Save Airports
+        public static void SaveAirports()
         {
             string tempFile = Constants.AirportsFile + ".tmp";
 
@@ -649,8 +649,8 @@ namespace AirlineManagementSystem
             File.Replace(tempFile, Constants.AirlinesFile, null);
         }
 
-        // Save Aircraft
-        public static void SaveAircraft()
+        // Save Aircrafts
+        public static void SaveAircrafts()
         {
             string tempFile = Constants.AircraftsFile + ".tmp";
 
@@ -816,8 +816,8 @@ namespace AirlineManagementSystem
             File.Replace(tempFile, Constants.TicketsFile, null);
         }
 
-        // Save Baggage
-        public static void SaveBaggage()
+        // Save Baggages
+        public static void SaveBaggages()
         {
             string tempFile = Constants.BaggagesFile + ".tmp";
 
@@ -2885,7 +2885,7 @@ namespace AirlineManagementSystem
             newBaggage.Status = BaggageStatus.CheckedIn;
 
             DataStore.Baggages.Add(newBaggage);
-            CsvHelper.SaveBaggage();
+            CsvHelper.SaveBaggages();
 
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine($"\n  Baggage {newBaggage.BaggageID} added successfully. Press Enter.");
@@ -2947,7 +2947,7 @@ namespace AirlineManagementSystem
             Baggage b = DataStore.Baggages[index];
             b.WeightKg = newWeight;
             DataStore.Baggages[index] = b;
-            CsvHelper.SaveBaggage();
+            CsvHelper.SaveBaggages();
 
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine($"\n  Baggage updated successfully. Press Enter.");
@@ -3909,7 +3909,7 @@ namespace AirlineManagementSystem
             // Save everything
             CsvHelper.SaveFlights();
             CsvHelper.SaveTickets();
-            CsvHelper.SaveBaggage();
+            CsvHelper.SaveBaggages();
             CsvHelper.SavePassengers();
         } 
 
@@ -4624,7 +4624,7 @@ namespace AirlineManagementSystem
             CsvHelper.LoadCrewMembers();
             CsvHelper.LoadFlightCrew();
             CsvHelper.LoadTickets();
-            CsvHelper.LoadBaggage();
+            CsvHelper.LoadBaggages();
             CsvHelper.LoadPromotions();
             CsvHelper.LoadAdmins();
             CsvHelper.LoadLoyaltyLogs();
