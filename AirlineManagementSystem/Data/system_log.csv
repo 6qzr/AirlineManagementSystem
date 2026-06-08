@@ -4,3 +4,5 @@ SL00002,2026-05-10T10:00:00,P00001,Passenger,Book,Ticket TK00001,Booked Economy 
 SL00003,2026-05-11T11:00:00,P00002,Passenger,Book,Ticket TK00002,Booked Economy seat on EK202
 SL00004,2026-05-13T14:00:00,P00004,Passenger,CheckIn,Ticket TK00004,Checked in for BA404
 SL00005,2026-05-15T10:00:00,ADM001,Admin,Create,Flight WY101,Scheduled new flight WY101
+SL00006,2026-06-08T12:20:26,ADM001,Admin,Login,,Admin System Administrator logged in successfully.
+SL00007,2026-06-08T12:21:51,ADM001,Admin,Logout,,System Administrator logged out.

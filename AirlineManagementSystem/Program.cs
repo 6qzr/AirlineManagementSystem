@@ -4508,7 +4508,568 @@ namespace AirlineManagementSystem
             }
         }
     }
-    
+
+    static class SystemLogService
+    {
+        public static void Show()
+        {
+            while (true)
+            {
+                Console.Clear();
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine("╔══════════════════════════════════════════╗");
+                Console.WriteLine("║          SYSTEM LOGS MANAGEMENT          ║");
+                Console.WriteLine("╚══════════════════════════════════════════╝");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n  [1] View All Logs");
+                Console.WriteLine("  [2] Filter Logs by Date Range");
+                Console.WriteLine("  [3] Filter Logs by User");
+                Console.WriteLine("  [4] Filter Logs by Action Type");
+                Console.WriteLine("  [5] Export Logs to File");
+                Console.WriteLine("  [0] Back to Admin Menu");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Select an option: ");
+                Console.ResetColor();
+
+                switch (Console.ReadLine())
+                {
+                    case "1":
+                        ViewAllLogs();
+                        break;
+                    case "2":
+                        FilterByDateRange();
+                        break;
+                    case "3":
+                        FilterByUser();
+                        break;
+                    case "4":
+                        FilterByActionType();
+                        break;
+                    case "5":
+                        ExportLogs();
+                        break;
+                    case "0":
+                        return;
+                    default:
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("\n  Invalid option. Press Enter to try again.");
+                        Console.ResetColor();
+                        Console.ReadLine();
+                        break;
+                }
+            }
+        }
+
+        private static void ViewAllLogs()
+        {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("╔══════════════════════════════════════════╗");
+            Console.WriteLine("║              ALL SYSTEM LOGS             ║");
+            Console.WriteLine("╚══════════════════════════════════════════╝");
+            Console.ResetColor();
+
+            if (DataStore.SystemLogs.Count == 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.WriteLine("\n  No logs available.");
+                Console.ResetColor();
+            }
+            else
+            {
+                DisplayLogsWithPagination(DataStore.SystemLogs);
+            }
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.WriteLine("\n  Press Enter to continue.");
+            Console.ResetColor();
+            Console.ReadLine();
+        }
+
+        private static void FilterByDateRange()
+        {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("╔══════════════════════════════════════════╗");
+            Console.WriteLine("║         FILTER LOGS BY DATE RANGE        ║");
+            Console.WriteLine("╚══════════════════════════════════════════╝");
+            Console.ResetColor();
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("\n  Enter start date (yyyy-MM-dd): ");
+            Console.ResetColor();
+            string startDateStr = Console.ReadLine();
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("  Enter end date (yyyy-MM-dd): ");
+            Console.ResetColor();
+            string endDateStr = Console.ReadLine();
+
+            if (!DateTime.TryParse(startDateStr, out DateTime startDate) || !DateTime.TryParse(endDateStr, out DateTime endDate))
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\n  Invalid date format. Press Enter to try again.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            // Set end date to end of day
+            endDate = endDate.AddDays(1).AddSeconds(-1);
+
+            List<SystemLog> filteredLogs = DataStore.SystemLogs
+                .Where(l => l.Timestamp >= startDate && l.Timestamp <= endDate)
+                .ToList();
+
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine($"╔══════════════════════════════════════════╗");
+            Console.WriteLine($"║    LOGS FROM {startDate:yyyy-MM-dd} TO {endDate:yyyy-MM-dd}     ║");
+            Console.WriteLine($"╚══════════════════════════════════════════╝");
+            Console.ResetColor();
+
+            if (filteredLogs.Count == 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.WriteLine("\n  No logs found for the specified date range.");
+                Console.ResetColor();
+            }
+            else
+            {
+                DisplayLogsWithPagination(filteredLogs);
+            }
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.WriteLine("\n  Press Enter to continue.");
+            Console.ResetColor();
+            Console.ReadLine();
+        }
+
+        private static void FilterByUser()
+        {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("╔══════════════════════════════════════════╗");
+            Console.WriteLine("║          FILTER LOGS BY USER             ║");
+            Console.WriteLine("╚══════════════════════════════════════════╝");
+            Console.ResetColor();
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("\n  Enter User ID: ");
+            Console.ResetColor();
+            string userID = Console.ReadLine().Trim();
+
+            List<SystemLog> filteredLogs = DataStore.SystemLogs
+                .Where(l => l.UserID.Equals(userID, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine($"╔══════════════════════════════════════════╗");
+            Console.WriteLine($"║       LOGS FOR USER {userID,-20}║");
+            Console.WriteLine($"╚══════════════════════════════════════════╝");
+            Console.ResetColor();
+
+            if (filteredLogs.Count == 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.WriteLine($"\n  No logs found for user {userID}.");
+                Console.ResetColor();
+            }
+            else
+            {
+                DisplayLogsWithPagination(filteredLogs);
+            }
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.WriteLine("\n  Press Enter to continue.");
+            Console.ResetColor();
+            Console.ReadLine();
+        }
+
+        private static void FilterByActionType()
+        {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("╔══════════════════════════════════════════╗");
+            Console.WriteLine("║        FILTER LOGS BY ACTION TYPE        ║");
+            Console.WriteLine("╚══════════════════════════════════════════╝");
+            Console.ResetColor();
+
+            // Display unique action types
+            var actionTypes = DataStore.SystemLogs
+                .Select(l => l.ActionType)
+                .Distinct()
+                .OrderBy(a => a)
+                .ToList();
+
+            if (actionTypes.Count == 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.WriteLine("\n  No action types found.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.WriteLine("\n  Available Action Types:");
+            Console.ResetColor();
+            for (int i = 0; i < actionTypes.Count; i++)
+            {
+                Console.WriteLine($"  [{i + 1}] {actionTypes[i]}");
+            }
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("\n  Select an action type (or enter custom): ");
+            Console.ResetColor();
+            string input = Console.ReadLine().Trim();
+
+            string selectedActionType = "";
+            if (int.TryParse(input, out int choice) && choice > 0 && choice <= actionTypes.Count)
+            {
+                selectedActionType = actionTypes[choice - 1];
+            }
+            else
+            {
+                selectedActionType = input;
+            }
+
+            List<SystemLog> filteredLogs = DataStore.SystemLogs
+                .Where(l => l.ActionType.Equals(selectedActionType, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine($"╔══════════════════════════════════════════╗");
+            Console.WriteLine($"║     LOGS FOR ACTION: {selectedActionType,-16}║");
+            Console.WriteLine($"╚══════════════════════════════════════════╝");
+            Console.ResetColor();
+
+            if (filteredLogs.Count == 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.WriteLine($"\n  No logs found for action type '{selectedActionType}'.");
+                Console.ResetColor();
+            }
+            else
+            {
+                DisplayLogsWithPagination(filteredLogs);
+            }
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.WriteLine("\n  Press Enter to continue.");
+            Console.ResetColor();
+            Console.ReadLine();
+        }
+
+        private static void ExportLogs()
+        {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("╔══════════════════════════════════════════╗");
+            Console.WriteLine("║            EXPORT SYSTEM LOGS            ║");
+            Console.WriteLine("╚══════════════════════════════════════════╝");
+            Console.ResetColor();
+
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("\n  [1] Export All Logs");
+            Console.WriteLine("  [2] Export Filtered by Date Range");
+            Console.WriteLine("  [3] Export Filtered by User");
+            Console.WriteLine("  [4] Export Filtered by Action Type");
+            Console.WriteLine("  [0] Back to System Logs Menu");
+            Console.ResetColor();
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("\n  Select an option: ");
+            Console.ResetColor();
+
+            List<SystemLog> logsToExport = new List<SystemLog>();
+            string exportName = "";
+
+            switch (Console.ReadLine())
+            {
+                case "1":
+                    logsToExport = DataStore.SystemLogs;
+                    exportName = "SystemLogs_All";
+                    break;
+                case "2":
+                    logsToExport = GetLogsFromDateRangeInput();
+                    exportName = "SystemLogs_DateRange";
+                    break;
+                case "3":
+                    logsToExport = GetLogsFromUserInput();
+                    exportName = "SystemLogs_User";
+                    break;
+                case "4":
+                    logsToExport = GetLogsFromActionTypeInput();
+                    exportName = "SystemLogs_ActionType";
+                    break;
+                case "0":
+                    return;
+                default:
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid option. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    return;
+            }
+
+            if (logsToExport.Count == 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\n  No logs to export. Press Enter to continue.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            // Create export file
+            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            string fileName = $"{exportName}_{timestamp}.txt";
+
+            Directory.CreateDirectory(Constants.reportsFolder);
+            string filePath = Path.Combine(Constants.reportsFolder, fileName);
+
+            try
+            {
+                using (StreamWriter sw = new StreamWriter(filePath))
+                {
+                    sw.WriteLine("╔══════════════════════════════════════════════════════════════════════════════════╗");
+                    sw.WriteLine("║                           SYSTEM LOGS EXPORT REPORT                            ║");
+                    sw.WriteLine("╚══════════════════════════════════════════════════════════════════════════════════╝");
+                    sw.WriteLine();
+                    sw.WriteLine($"Export Date: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+                    sw.WriteLine($"Total Logs: {logsToExport.Count}");
+                    sw.WriteLine();
+                    sw.WriteLine(new string('─', 140));
+                    sw.WriteLine($"{"LogID",-8} {"Timestamp",-25} {"UserID",-10} {"Role",-12} {"Action",-15} {"Entity",-20} {"Details",-50}");
+                    sw.WriteLine(new string('─', 140));
+
+                    foreach (SystemLog log in logsToExport)
+                    {
+                        sw.WriteLine($"{log.LogID,-8} {log.Timestamp:yyyy-MM-dd HH:mm:ss,-25} {log.UserID,-10} {log.UserRole,-12} {log.ActionType,-15} {log.EntityAffected,-20} {log.Details,-50}");
+                    }
+
+                    sw.WriteLine(new string('─', 140));
+                    sw.WriteLine($"End of Report");
+                }
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"\n  ✓ Logs exported successfully to: {fileName}");
+                Console.ResetColor();
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"\n  ✗ Error exporting logs: {ex.Message}");
+                Console.ResetColor();
+            }
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.WriteLine("\n  Press Enter to continue.");
+            Console.ResetColor();
+            Console.ReadLine();
+        }
+
+        private static List<SystemLog> GetLogsFromDateRangeInput()
+        {
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("\n  Enter start date (yyyy-MM-dd): ");
+            Console.ResetColor();
+            string startDateStr = Console.ReadLine();
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("  Enter end date (yyyy-MM-dd): ");
+            Console.ResetColor();
+            string endDateStr = Console.ReadLine();
+
+            if (!DateTime.TryParse(startDateStr, out DateTime startDate) || !DateTime.TryParse(endDateStr, out DateTime endDate))
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\n  Invalid date format.");
+                Console.ResetColor();
+                return new List<SystemLog>();
+            }
+
+            endDate = endDate.AddDays(1).AddSeconds(-1);
+
+            return DataStore.SystemLogs
+                .Where(l => l.Timestamp >= startDate && l.Timestamp <= endDate)
+                .ToList();
+        }
+
+        private static List<SystemLog> GetLogsFromUserInput()
+        {
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("\n  Enter User ID: ");
+            Console.ResetColor();
+            string userID = Console.ReadLine().Trim();
+
+            return DataStore.SystemLogs
+                .Where(l => l.UserID.Equals(userID, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        private static List<SystemLog> GetLogsFromActionTypeInput()
+        {
+            var actionTypes = DataStore.SystemLogs
+                .Select(l => l.ActionType)
+                .Distinct()
+                .OrderBy(a => a)
+                .ToList();
+
+            if (actionTypes.Count == 0)
+                return new List<SystemLog>();
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.WriteLine("\n  Available Action Types:");
+            Console.ResetColor();
+            for (int i = 0; i < actionTypes.Count; i++)
+            {
+                Console.WriteLine($"  [{i + 1}] {actionTypes[i]}");
+            }
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("\n  Select an action type (or enter custom): ");
+            Console.ResetColor();
+            string input = Console.ReadLine().Trim();
+
+            string selectedActionType = "";
+            if (int.TryParse(input, out int choice) && choice > 0 && choice <= actionTypes.Count)
+            {
+                selectedActionType = actionTypes[choice - 1];
+            }
+            else
+            {
+                selectedActionType = input;
+            }
+
+            return DataStore.SystemLogs
+                .Where(l => l.ActionType.Equals(selectedActionType, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        private static void DisplayLogsWithPagination(List<SystemLog> logs)
+        {
+            int pageSize = 5;
+            int currentPage = 0;
+            int totalPages = (int)Math.Ceiling((double)logs.Count / pageSize);
+
+            while (currentPage < totalPages)
+            {
+                Console.Clear();
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine($"╔══════════════════════════════════════════╗");
+                Console.WriteLine($"║     SYSTEM LOGS (Page {currentPage + 1} of {totalPages})          ║");
+                Console.WriteLine($"╚══════════════════════════════════════════╝");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"\n{"LogID",-8} {"Timestamp",-20} {"UserID",-10} {"Action",-15} {"Entity",-20}");
+                Console.WriteLine(new string('-', 85));
+                Console.ResetColor();
+
+                int startIdx = currentPage * pageSize;
+                int endIdx = Math.Min(startIdx + pageSize, logs.Count);
+
+                for (int i = startIdx; i < endIdx; i++)
+                {
+                    SystemLog log = logs[i];
+                    Console.WriteLine($"{log.LogID,-8} {log.Timestamp:yyyy-MM-dd HH:mm,-20} {log.UserID,-10} {log.ActionType,-15} {log.EntityAffected,-20}");
+                }
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.WriteLine($"\n({endIdx} of {logs.Count} entries shown)");
+
+                if (totalPages > 1)
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine($"\n  [P] Previous Page");
+                    Console.WriteLine($"  [N] Next Page");
+                    Console.WriteLine($"  [D] View Details");
+                    Console.WriteLine($"  [Q] Quit");
+                    Console.ResetColor();
+
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                    Console.Write("\n  Select an option: ");
+                    Console.ResetColor();
+
+                    string choice = Console.ReadLine().ToUpper();
+                    switch (choice)
+                    {
+                        case "P":
+                            if (currentPage > 0)
+                                currentPage--;
+                            break;
+                        case "N":
+                            if (currentPage < totalPages - 1)
+                                currentPage++;
+                            break;
+                        case "D":
+                            ViewLogDetails(logs, startIdx, endIdx);
+                            break;
+                        case "Q":
+                            return;
+                        default:
+                            break;
+                    }
+                }
+                else
+                {
+                    return;
+                }
+            }
+        }
+
+        private static void ViewLogDetails(List<SystemLog> logs, int startIdx, int endIdx)
+        {
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("\n  Enter LogID to view details (or press Enter to go back): ");
+            Console.ResetColor();
+            string logID = Console.ReadLine().Trim();
+
+            if (string.IsNullOrEmpty(logID))
+                return;
+
+            SystemLog selectedLog = logs.FirstOrDefault(l => l.LogID == logID);
+            if (selectedLog.LogID == null)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\n  Log not found. Press Enter to continue.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("╔══════════════════════════════════════════╗");
+            Console.WriteLine("║           LOG DETAILS                    ║");
+            Console.WriteLine("╚══════════════════════════════════════════╝");
+            Console.ResetColor();
+
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine($"\n  Log ID:           {selectedLog.LogID}");
+            Console.WriteLine($"  Timestamp:        {selectedLog.Timestamp:yyyy-MM-dd HH:mm:ss}");
+            Console.WriteLine($"  User ID:          {selectedLog.UserID}");
+            Console.WriteLine($"  User Role:        {selectedLog.UserRole}");
+            Console.WriteLine($"  Action Type:      {selectedLog.ActionType}");
+            Console.WriteLine($"  Entity Affected:  {selectedLog.EntityAffected}");
+            Console.WriteLine($"  Details:          {selectedLog.Details}");
+            Console.ResetColor();
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.WriteLine("\n  Press Enter to continue.");
+            Console.ResetColor();
+            Console.ReadLine();
+        }
+    }
+
     static class AdminPortal
     {
         public static void CallTicketPriceCalculator()
@@ -4938,7 +5499,7 @@ namespace AirlineManagementSystem
                         //CrewService.Show();
                         break;
                     case "7":
-                        //TicketService.Show();
+                        SystemLogService.Show();
                         break;
                     case "0":
                         AuthService.Logout(admin.AdminID, admin.FullName, "Admin");
