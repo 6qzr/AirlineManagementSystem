@@ -1632,7 +1632,7 @@ namespace AirlineManagementSystem
             }
         }
 
-        private static string GetFlightNumber()
+        public static string GetFlightNumber()
         {
             Console.ForegroundColor = ConsoleColor.Gray;
             Console.Write("\n  Enter flight Number (0 to cancel): ");
@@ -5070,6 +5070,111 @@ namespace AirlineManagementSystem
         }
     }
 
+    static class BaggageService
+    {
+        public static void Show()
+        {
+            while (true)
+            {
+                Console.Clear();
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine("╔══════════════════════════════════════════╗");
+                Console.WriteLine("║             BAGGAGE OVERSIGHT            ║");
+                Console.WriteLine("╚══════════════════════════════════════════╝");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n  [1] View All Baggage");
+                Console.WriteLine("  [2] Update baggage status");
+                Console.WriteLine("  [3] Generate Baggage Status");
+                Console.WriteLine("  [0] Back to Admin Menu");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Select an option: ");
+                Console.ResetColor();
+
+                switch (Console.ReadLine())
+                {
+                    case "1":
+                        ViewAllBaggage();
+                        break;
+                    case "2":
+                        break;
+                    case "3":
+                        break;
+                    case "0":
+                        return;
+                    default:
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("\n  Invalid option. Press Enter to try again.");
+                        Console.ResetColor();
+                        Console.ReadLine();
+                        break;
+                }
+            }
+        }
+
+        static void ViewAllBaggage()
+        {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("╔══════════════════════════════════════════╗");
+            Console.WriteLine("║              VIEW ALL BAGGAGE            ║");
+            Console.WriteLine("╚══════════════════════════════════════════╝");
+            Console.ResetColor();
+
+            while (true)
+            {
+                string flightNumber = FlightService.GetFlightNumber();
+
+                if (flightNumber == "0")
+                    return;
+
+                if (string.IsNullOrEmpty(flightNumber))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Flight number cannot be empty.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                if (!DataStore.Flights.ContainsKey(flightNumber))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Flight does not exist. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                List<Baggage> flightBaggages = DataStore.Baggages
+                    .Where(b => DataStore.Tickets.ContainsKey(b.TicketID) &&
+                    DataStore.Tickets[b.TicketID].FlightNumber == flightNumber)
+                    .ToList();
+
+                if (flightBaggages.Count == 0)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Flight has no baggage. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine($"\n{"Baggage ID",-12} {"Type",-12} {"Weight (kg)",-14} {"Status"}");
+                Console.WriteLine(new string('-', 55));
+                foreach (Baggage b in flightBaggages)
+                    Console.WriteLine($"{b.BaggageID,-12} {b.Type,-12} {b.WeightKg,-14} {b.Status}");
+                Console.WriteLine(new string('-', 55));
+                Console.ResetColor();
+                Console.ReadLine();
+            }
+        }
+    }
+
     static class AdminPortal
     {
         public static void CallTicketPriceCalculator()
@@ -5496,7 +5601,7 @@ namespace AirlineManagementSystem
                         //PassengerService.Show();
                         break;
                     case "6":
-                        //CrewService.Show();
+                        BaggageService.Show();
                         break;
                     case "7":
                         SystemLogService.Show();
