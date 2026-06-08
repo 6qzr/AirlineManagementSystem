@@ -1524,7 +1524,7 @@ namespace AirlineManagementSystem
                     continue;
                 }
 
-                // Select baggage type
+                // Select sort type
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("\n  [1] Price");
                 Console.WriteLine("  [2] Duration");
@@ -5100,6 +5100,7 @@ namespace AirlineManagementSystem
                         ViewAllBaggage();
                         break;
                     case "2":
+                        UpdateBaggage();
                         break;
                     case "3":
                         break;
@@ -5171,6 +5172,107 @@ namespace AirlineManagementSystem
                 Console.WriteLine(new string('-', 55));
                 Console.ResetColor();
                 Console.ReadLine();
+            }
+        }
+
+        static void UpdateBaggage()
+        {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("╔══════════════════════════════════════════╗");
+            Console.WriteLine("║               UPDATE BAGGAGE             ║");
+            Console.WriteLine("╚══════════════════════════════════════════╝");
+            Console.ResetColor();
+
+            while (true)
+            {
+                string flightNumber = FlightService.GetFlightNumber();
+
+                if (flightNumber == "0")
+                    return;
+
+                if (string.IsNullOrEmpty(flightNumber))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Flight number cannot be empty.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                if (!DataStore.Flights.ContainsKey(flightNumber))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Flight does not exist. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                List<Baggage> flightBaggages = DataStore.Baggages
+                    .Where(b => DataStore.Tickets.ContainsKey(b.TicketID) &&
+                    DataStore.Tickets[b.TicketID].FlightNumber == flightNumber)
+                    .ToList();
+
+                if (flightBaggages.Count == 0)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Flight has no baggage. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n  [1] Checked-In");
+                Console.WriteLine("  [2] Loaded");
+                Console.WriteLine("  [3] Lost");
+                Console.WriteLine("  [4] Delivered");
+                Console.WriteLine("  [0] Cancel the update");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Select new status: ");
+                Console.ResetColor();
+
+                BaggageStatus newStatus;
+
+                switch (Console.ReadLine()?.Trim())
+                {
+                    case "1": newStatus = BaggageStatus.CheckedIn; break;
+                    case "2": newStatus = BaggageStatus.Loaded; break;
+                    case "3": newStatus = BaggageStatus.Lost; break;
+                    case "4": newStatus = BaggageStatus.Delivered; break;
+                    case "0": return;
+                    default:
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("\n  Invalid option. Press Enter to try again.");
+                        Console.ResetColor();
+                        Console.ReadLine();
+                        continue;   // <-- skip the update entirely
+                }
+
+                for (int i = 0; i < DataStore.Baggages.Count; i++)
+                {
+                    if (flightBaggages.Any(b => b.BaggageID == DataStore.Baggages[i].BaggageID))
+                    {
+                        Baggage b = DataStore.Baggages[i];
+                        b.Status = newStatus;
+                        DataStore.Baggages[i] = b;
+                    }
+                }
+
+                CsvHelper.SaveBaggages();
+
+                CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole,
+                    "UPDATE", "Baggage",
+                    $"Flight {flightNumber} — {flightBaggages.Count} baggage item(s) updated to {newStatus}.");
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"\n  {flightBaggages.Count} baggage item(s) updated to {newStatus}. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
             }
         }
     }
