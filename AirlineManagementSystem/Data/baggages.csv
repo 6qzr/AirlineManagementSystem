@@ -1,5 +1,5 @@
 BaggageID,TicketID,WeightKg,BaggageType,Status
-BG00001,TK00001,20.0,Hold,CheckedIn
+BG00001,TK00001,20.0,Hold,Lost
 BG00002,TK00002,7.0,Cabin,CheckedIn
 BG00003,TK00003,32.0,Oversized,Loaded
 BG00004,TK00004,23.0,Hold,Loaded

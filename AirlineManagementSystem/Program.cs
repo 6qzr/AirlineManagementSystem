@@ -195,7 +195,7 @@ namespace AirlineManagementSystem
         public static string SystemLogFile = Path.Combine(BaseDir, "system_log.csv");
         public static string ErrorLogFile = Path.Combine(BaseDir, "error_log.csv");
 
-        public static string reportsFolder = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Reports"));
+        public static string ReportsFolder = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Reports"));
 
         public const int MaxFailedLoginAttempts = 3;
         public const int LockoutMinutes = 15;
@@ -2593,10 +2593,10 @@ namespace AirlineManagementSystem
                 report.AppendLine($"Total Crew: {crewMembers.Count}");
 
                 // Save Report
-                Directory.CreateDirectory(Constants.reportsFolder);
+                Directory.CreateDirectory(Constants.ReportsFolder);
 
                 string filePath = Path.Combine(
-                    Constants.reportsFolder,
+                    Constants.ReportsFolder,
                     $"FlightReport_{flightNumber}_{DateTime.Now:yyyyMMdd_HHmmss}.txt"
                 );
                 File.WriteAllText(filePath, report.ToString());
@@ -4456,10 +4456,10 @@ namespace AirlineManagementSystem
             report.AppendLine($"Total Passengers: {passengers.Count}");
 
             // Save Report
-            Directory.CreateDirectory(Constants.reportsFolder);
+            Directory.CreateDirectory(Constants.ReportsFolder);
 
             string filePath = Path.Combine(
-                Constants.reportsFolder,
+                Constants.ReportsFolder,
                 $"LoyaltyTierReport_{tier}_{DateTime.Now:yyyyMMdd_HHmmss}.txt"
             );
             File.WriteAllText(filePath, report.ToString());
@@ -4832,8 +4832,8 @@ namespace AirlineManagementSystem
             string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             string fileName = $"{exportName}_{timestamp}.txt";
 
-            Directory.CreateDirectory(Constants.reportsFolder);
-            string filePath = Path.Combine(Constants.reportsFolder, fileName);
+            Directory.CreateDirectory(Constants.ReportsFolder);
+            string filePath = Path.Combine(Constants.ReportsFolder, fileName);
 
             try
             {
@@ -5086,7 +5086,7 @@ namespace AirlineManagementSystem
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("\n  [1] View All Baggage");
                 Console.WriteLine("  [2] Update baggage status");
-                Console.WriteLine("  [3] Generate Baggage Status");
+                Console.WriteLine("  [3] Generate a Lost Baggage Report");
                 Console.WriteLine("  [0] Back to Admin Menu");
                 Console.ResetColor();
 
@@ -5103,6 +5103,7 @@ namespace AirlineManagementSystem
                         UpdateBaggage();
                         break;
                     case "3":
+                        LostBaggageReport();
                         break;
                     case "0":
                         return;
@@ -5274,6 +5275,137 @@ namespace AirlineManagementSystem
                 Console.ReadLine();
                 return;
             }
+        }
+
+        static void LostBaggageReport()
+        {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("╔══════════════════════════════════════════╗");
+            Console.WriteLine("║            LOST BAGGAGE REPORT           ║");
+            Console.WriteLine("╚══════════════════════════════════════════╝");
+            Console.ResetColor();
+
+            List<Baggage> lostBaggages = DataStore.Baggages
+                .Where(b => b.Status == BaggageStatus.Lost)
+                .ToList();
+            
+            if (lostBaggages.Count == 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n  No lost baggage found. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            int totalPages = (int)Math.Ceiling(lostBaggages.Count / (double)Constants.PageSize);
+            int currentPage = 1;
+
+            while (true)
+            {
+                List<Baggage> pageItems = lostBaggages
+                    .Skip((currentPage - 1) * Constants.PageSize)
+                    .Take(Constants.PageSize)
+                    .ToList();
+
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine(
+                    $"\n  {"BaggageID",-12} {"TicketID",-12} {"PassengerID",-14} {"Flight",-10} {"Type",-12} {"Weight",-8} {"Status",-10}"
+                );
+                Console.WriteLine(new string('-', 85));
+                Console.ResetColor();
+
+                foreach (Baggage b in pageItems)
+                {
+                    string passengerID = DataStore.Tickets.ContainsKey(b.TicketID)
+                        ? DataStore.Tickets[b.TicketID].PassengerID
+                        : "-";
+
+                    string flightNumber = DataStore.Tickets.ContainsKey(b.TicketID)
+                        ? DataStore.Tickets[b.TicketID].FlightNumber
+                        : "-";
+
+                    Console.WriteLine(
+                        $"  {b.BaggageID,-12}" +
+                        $" {b.TicketID,-12}" +
+                        $" {passengerID,-14}" +
+                        $" {flightNumber,-10}" +
+                        $" {b.Type,-12}" +
+                        $" {b.WeightKg,-8}" +
+                        $" {b.Status,-10}"
+                    );
+                }
+
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"\n  Page {currentPage} of {totalPages}  |  Total Lost: {lostBaggages.Count}");
+                Console.WriteLine("  [N] Next   [P] Previous   [E] Export   [0] Back");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Choice: ");
+                Console.ResetColor();
+
+                string input = Console.ReadLine()?.Trim().ToUpper() ?? "";
+
+                if (input == "0") return;
+                else if (input == "N" && currentPage < totalPages) currentPage++;
+                else if (input == "P" && currentPage > 1) currentPage--;
+                else if (input == "E") { ExportLostBaggageReport(lostBaggages); return; }
+            }
+        }
+
+        static void ExportLostBaggageReport(List<Baggage> lostBaggages)
+        {
+            string fileName = $"lost_baggage_{DateTime.Now:yyyy-MM-dd_HHmm}.txt";
+            string filePath = Path.Combine(Constants.ReportsFolder, fileName);
+
+            Directory.CreateDirectory(Constants.ReportsFolder);
+
+            using (StreamWriter writer = new StreamWriter(filePath, false))
+            {
+                writer.WriteLine("╔══════════════════════════════════════════╗");
+                writer.WriteLine("║            LOST BAGGAGE REPORT           ║");
+                writer.WriteLine("╚══════════════════════════════════════════╝");
+                writer.WriteLine($"  Generated   : {DateTime.Now:yyyy-MM-dd HH:mm}");
+                writer.WriteLine($"  Exported By : {Session.CurrentUserID} ({Session.CurrentUserRole})");
+                writer.WriteLine($"  Total Lost  : {lostBaggages.Count}");
+                writer.WriteLine(new string('-', 85));
+                writer.WriteLine(
+                    $"  {"BaggageID",-12} {"TicketID",-12} {"PassengerID",-14} {"Flight",-10} {"Type",-12} {"Weight",-8} {"Status",-10}"
+                );
+                writer.WriteLine(new string('-', 85));
+
+                foreach (Baggage b in lostBaggages)
+                {
+                    string passengerID = DataStore.Tickets.ContainsKey(b.TicketID)
+                        ? DataStore.Tickets[b.TicketID].PassengerID
+                        : "-";
+
+                    string flightNumber = DataStore.Tickets.ContainsKey(b.TicketID)
+                        ? DataStore.Tickets[b.TicketID].FlightNumber
+                        : "-";
+
+                    writer.WriteLine(
+                        $"  {b.BaggageID,-12}" +
+                        $" {b.TicketID,-12}" +
+                        $" {passengerID,-14}" +
+                        $" {flightNumber,-10}" +
+                        $" {b.Type,-12}" +
+                        $" {b.WeightKg,-8}" +
+                        $" {b.Status,-10}"
+                    );
+                }
+            }
+
+            CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole,
+                "EXPORT", "Baggage",
+                $"Lost baggage report exported to {fileName}. {lostBaggages.Count} record(s).");
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"\n  Report exported to: {filePath}. Press Enter.");
+            Console.ResetColor();
+            Console.ReadLine();
         }
     }
 

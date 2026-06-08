@@ -6,3 +6,7 @@ SL00004,2026-05-13T14:00:00,P00004,Passenger,CheckIn,Ticket TK00004,Checked in f
 SL00005,2026-05-15T10:00:00,ADM001,Admin,Create,Flight WY101,Scheduled new flight WY101
 SL00006,2026-06-08T12:20:26,ADM001,Admin,Login,,Admin System Administrator logged in successfully.
 SL00007,2026-06-08T12:21:51,ADM001,Admin,Logout,,System Administrator logged out.
+SL00008,2026-06-08T17:11:03,ADM001,Admin,Login,,Admin System Administrator logged in successfully.
+SL0009,2026-06-08T17:11:26,ADM001,Admin,UPDATE,Baggage,Flight WY101 — 1 baggage item(s) updated to Lost.
+SL0010,2026-06-08T17:11:35,ADM001,Admin,EXPORT,Baggage,Lost baggage report exported to lost_baggage_2026-06-08_1711.txt. 1 record(s).
+SL00011,2026-06-08T17:11:39,ADM001,Admin,Logout,,System Administrator logged out.
