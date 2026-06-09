@@ -5530,7 +5530,7 @@ namespace AirlineManagementSystem
                         UpdateExpiryDate(DataStore.Promotions[promoCode]);
                         break;
                     case "4":
-                        //UpdateActivateDeactivate(ataStore.Promotions[promoCode]);
+                        UpdateActivateDeactivate(DataStore.Promotions[promoCode]);
                         break;
                     case "0":
                         return;
@@ -5649,6 +5649,52 @@ namespace AirlineManagementSystem
 
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("\n  Expiry Date updated successfully. Press Enter.");
+            Console.ResetColor();
+            Console.ReadLine();
+        }
+
+        static void UpdateActivateDeactivate(Promotion promotion)
+        {
+            if (promotion.IsActive)
+            {
+                Console.WriteLine($"\n  Promotion Code is currently Active");
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Do you want to Deactivate [y/n]: ");
+                Console.ResetColor();
+            }
+            else
+            {
+                Console.WriteLine($"\n  Promotion Code is NOT Active");
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Do you want to Activate [y/n]: ");
+                Console.ResetColor();
+            }
+
+           switch (Console.ReadLine()?.Trim().ToLower())
+            {
+                case "y":
+                    promotion.IsActive = !promotion.IsActive;
+                    break;
+                case "n":
+                    return;
+                default:
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid option. Press Enter.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    return;
+
+            }
+
+            DataStore.Promotions[promotion.PromoCode] = promotion;
+            CsvHelper.SavePromotions();
+
+            CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole,
+                "UPDATE", "Promotion",
+                $"Promo '{promotion.PromoCode}' status updated to {(promotion.IsActive ? "Active" : "Inactive")}.");
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("\n  Activation updated successfully. Press Enter.");
             Console.ResetColor();
             Console.ReadLine();
         }
