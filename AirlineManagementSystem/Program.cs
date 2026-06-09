@@ -5485,7 +5485,138 @@ namespace AirlineManagementSystem
 
         static void UpdatePromotion()
         {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("╔══════════════════════════════════════════╗");
+            Console.WriteLine("║             UPDATE PROMO CODE            ║");
+            Console.WriteLine("╚══════════════════════════════════════════╝");
+            Console.ResetColor();
 
+            while (true)
+            {
+                string promoCode = GetPromoCode();
+                if (promoCode == "0") return;
+
+                if (!DataStore.Promotions.ContainsKey(promoCode))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Promo code not found. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n  [1] Discount Percent");
+                Console.WriteLine("  [2] Applicable Class");
+                Console.WriteLine("  [3] Expiry Date");
+                Console.WriteLine("  [4] Activate/Deactivate");
+                Console.WriteLine("  [0] Back");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Select an option: ");
+                Console.ResetColor();
+
+                switch (Console.ReadLine())
+                {
+                    case "1":
+                        UpdateDiscountPercentage(DataStore.Promotions[promoCode]);
+                        break;
+                    case "2":
+                        UpdateApplicableClass(DataStore.Promotions[promoCode]);
+                        break;
+                    case "3":
+                        //UpdateExpiryDate(ataStore.Promotions[promoCode]);
+                        break;
+                    case "4":
+                        //UpdateActivateDeactivate(ataStore.Promotions[promoCode]);
+                        break;
+                    case "0":
+                        return;
+                    default:
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("\n  Invalid option. Press Enter to try again.");
+                        Console.ResetColor();
+                        Console.ReadLine();
+                        break;
+                }
+            }
+        }
+
+        private static void UpdateDiscountPercentage(Promotion promotion)
+        {
+            Console.WriteLine($"\n  Current Discount: {promotion.DiscountPercentage:0.##}%");
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("  New Discount Percentage (1-100): ");
+            Console.ResetColor();
+
+            if (!decimal.TryParse(Console.ReadLine(), out decimal newDiscount) ||
+                newDiscount < 1 || newDiscount > 100)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\n  Invalid percentage. Must be between 1 and 100. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            promotion.DiscountPercentage = newDiscount;
+            DataStore.Promotions[promotion.PromoCode] = promotion;
+            CsvHelper.SavePromotions();
+
+            CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole,
+                "UPDATE", "Promotion",
+                $"Promo '{promotion.PromoCode}' DiscountPercentage updated to {newDiscount:0.##}%.");
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("\n  Discount updated successfully. Press Enter.");
+            Console.ResetColor();
+            Console.ReadLine();
+        }
+
+        private static void UpdateApplicableClass(Promotion promotion)
+        {
+            Console.WriteLine($"\n  Current Applicable Class: {promotion.ApplicableClass}");
+
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("  [1] Economy");
+            Console.WriteLine("  [2] Business");
+            Console.WriteLine("  [3] Both");
+            Console.ResetColor();
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("\n  Choice: ");
+            Console.ResetColor();
+
+            PromotionApplicableClass newClass;
+
+            switch (Console.ReadLine()?.Trim())
+            {
+                case "1": newClass = PromotionApplicableClass.Economy; break;
+                case "2": newClass = PromotionApplicableClass.Business; break;
+                case "3": newClass = PromotionApplicableClass.Both; break;
+                default:
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid option. Press Enter.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    return;
+            }
+
+            promotion.ApplicableClass = newClass;
+            DataStore.Promotions[promotion.PromoCode] = promotion;
+            CsvHelper.SavePromotions();
+
+            CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole,
+                "UPDATE", "Promotion",
+                $"Promo '{promotion.PromoCode}' ApplicableClass updated to {newClass}.");
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("\n  Applicable class updated successfully. Press Enter.");
+            Console.ResetColor();
+            Console.ReadLine();
         }
 
         static void DeletePromotion()
