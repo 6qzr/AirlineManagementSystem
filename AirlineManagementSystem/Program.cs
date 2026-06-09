@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.ComponentModel;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Timers;
 
@@ -5406,6 +5407,87 @@ namespace AirlineManagementSystem
             Console.WriteLine($"\n  Report exported to: {filePath}. Press Enter.");
             Console.ResetColor();
             Console.ReadLine();
+        }
+    }
+
+    static class PromotionService
+    {
+        public static void Show()
+        {
+            while (true)
+            {
+                Console.Clear();
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine("╔══════════════════════════════════════════╗");
+                Console.WriteLine("║            PROMOTION MANAGEMENT          ║");
+                Console.WriteLine("╚══════════════════════════════════════════╝");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n  [1] Add New Promtion");
+                Console.WriteLine("  [2] View All Promotions");
+                Console.WriteLine("  [3] Update Promotion");
+                Console.WriteLine("  [4] Delete Promotion");
+                Console.WriteLine("  [5] View Usage Summary");
+                Console.WriteLine("  [0] Back to Admin Menu");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Select an option: ");
+                Console.ResetColor();
+
+                switch (Console.ReadLine())
+                {
+                    case "1":
+                        AddPromotion();
+                        break;
+                    case "2":
+                        ViewAllPromotions();
+                        break;
+                    case "3":
+                        UpdatePromotion();
+                        break;
+                    case "4":
+                        DeletePromotion();
+                        break;
+                    case "5":
+                        ViewUsageSummary();
+                        break;
+                    case "0":
+                        return;
+                    default:
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("\n  Invalid option. Press Enter to try again.");
+                        Console.ResetColor();
+                        Console.ReadLine();
+                        break;
+                }
+            }
+        }
+
+        static void AddPromotion()
+        {
+
+        }
+
+        static void ViewAllPromotions()
+        {
+
+        }
+
+        static void UpdatePromotion()
+        {
+
+        }
+
+        static void DeletePromotion()
+        {
+
+        }
+
+        static void ViewUsageSummary()
+        {
+
         }
     }
 
