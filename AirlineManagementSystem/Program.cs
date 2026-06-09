@@ -5465,6 +5465,14 @@ namespace AirlineManagementSystem
             }
         }
 
+        static string GetPromoCode()
+        {
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("\n  Enter the Promo code (0 to cancel): ");
+            Console.ResetColor();
+            return Console.ReadLine();
+        }
+
         static void AddPromotion()
         {
 
@@ -5482,7 +5490,51 @@ namespace AirlineManagementSystem
 
         static void DeletePromotion()
         {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("╔══════════════════════════════════════════╗");
+            Console.WriteLine("║             DELETE PROMO CODE            ║");
+            Console.WriteLine("╚══════════════════════════════════════════╝");
+            Console.ResetColor();
 
+            while (true)
+            {
+                string promoCode = GetPromoCode();
+                if (promoCode == "0") return;
+
+                if (!DataStore.Promotions.ContainsKey(promoCode))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Promo code not found. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                bool inUse = DataStore.Tickets.Values.Any(t => t.PromoCode == promoCode);
+
+                if (inUse)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Cannot delete — promo code is referenced by existing tickets. Press Enter.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    return;
+                }
+
+                DataStore.Promotions.Remove(promoCode);
+                CsvHelper.SavePromotions();
+
+                CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole,
+                    "DELETE", "Promotion",
+                    $"Promo code '{promoCode}' deleted.");
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("\n  Promo code deleted successfully. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
         }
 
         static void ViewUsageSummary()
@@ -5914,7 +5966,7 @@ namespace AirlineManagementSystem
                         //FlightService.Show();
                         break;
                     case "5":
-                        //PassengerService.Show();
+                        PromotionService.Show();
                         break;
                     case "6":
                         BaggageService.Show();
