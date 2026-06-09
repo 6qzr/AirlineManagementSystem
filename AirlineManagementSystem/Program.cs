@@ -5527,7 +5527,7 @@ namespace AirlineManagementSystem
                         UpdateApplicableClass(DataStore.Promotions[promoCode]);
                         break;
                     case "3":
-                        //UpdateExpiryDate(ataStore.Promotions[promoCode]);
+                        UpdateExpiryDate(DataStore.Promotions[promoCode]);
                         break;
                     case "4":
                         //UpdateActivateDeactivate(ataStore.Promotions[promoCode]);
@@ -5615,6 +5615,40 @@ namespace AirlineManagementSystem
 
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("\n  Applicable class updated successfully. Press Enter.");
+            Console.ResetColor();
+            Console.ReadLine();
+        }
+
+        private static void UpdateExpiryDate(Promotion promotion)
+        {
+            Console.WriteLine($"\n  Current Expiry Date: {promotion.EndDate}");
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("  New Expiry Date (yyyy-MM-dd): ");
+            Console.ResetColor();
+
+            // Future date validation. Expiry date should not be in the past.
+            if (!DateTime.TryParseExact(Console.ReadLine()?.Trim(), "yyyy-MM-dd",
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out DateTime expiryDate))
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\n  Invalid Expiry date. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            promotion.EndDate = expiryDate;
+            DataStore.Promotions[promotion.PromoCode] = promotion;
+            CsvHelper.SavePromotions();
+
+            CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole,
+                "UPDATE", "Promotion",
+                $"Promo '{promotion.PromoCode}' End Date updated to {expiryDate:yyyy-MM-dd}.");
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("\n  Expiry Date updated successfully. Press Enter.");
             Console.ResetColor();
             Console.ReadLine();
         }
