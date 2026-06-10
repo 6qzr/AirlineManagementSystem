@@ -2723,7 +2723,7 @@ namespace AirlineManagementSystem
                     case "5": AssignCrewToFlightMenu(); break;
                     case "6": RemoveCrewFromFlight(); break;
                     case "7": ViewCrewSchedule(); break;
-                    case "8": //FlagAvailability(); break;
+                    case "8": FlagAvailability(); break;
                     case "0": return;
                 }
             }
@@ -2947,11 +2947,7 @@ namespace AirlineManagementSystem
 
             while (true)
             {
-                Console.ForegroundColor = ConsoleColor.Gray;
-                Console.Write("\n  Enter Employee ID (0 to cancel): ");
-                Console.ResetColor();
-                string employeeID = Console.ReadLine()?.Trim().ToUpper() ?? "";
-
+                string employeeID = GetEmployeeID();
                 if (employeeID == "0") return;
 
                 if (!DataStore.CrewMembers.ContainsKey(employeeID))
@@ -3117,11 +3113,7 @@ namespace AirlineManagementSystem
 
             while (true)
             {
-                Console.ForegroundColor = ConsoleColor.Gray;
-                Console.Write("\n  Enter Employee ID (0 to cancel): ");
-                Console.ResetColor();
-                string employeeID = Console.ReadLine()?.Trim().ToUpper() ?? "";
-
+                string employeeID = GetEmployeeID();
                 if (employeeID == "0") return;
 
                 if (!DataStore.CrewMembers.ContainsKey(employeeID))
@@ -3547,6 +3539,112 @@ namespace AirlineManagementSystem
                 else if (nav == "N" && currentPage < totalPages) currentPage++;
                 else if (nav == "P" && currentPage > 1) currentPage--;
             }
+        }
+
+        public static void FlagAvailability()
+        {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("╔══════════════════════════════════════════╗");
+            Console.WriteLine("║          FLAG CREW AVAILABILITY          ║");
+            Console.WriteLine("╚══════════════════════════════════════════╝");
+            Console.ResetColor();
+
+            while (true)
+            {
+                string employeeID = GetEmployeeID();
+                if (employeeID == "0") return;
+
+                if (!DataStore.CrewMembers.ContainsKey(employeeID))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Employee not found. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                CrewMember crew = DataStore.CrewMembers[employeeID];
+                string newStatus = crew.IsAvailable ? "Unavailable" : "Available";
+
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine($"\n  {crew.FullName} is currently {(crew.IsAvailable ? "Available" : "Unavailable")}.");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"  [1] Mark as {newStatus}");
+                Console.WriteLine("  [Enter] Cancel");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Choice: ");
+                Console.ResetColor();
+
+                if (Console.ReadLine()?.Trim() != "1")
+                    return;
+
+                bool markingUnavailable = crew.IsAvailable;
+
+                crew.IsAvailable = !crew.IsAvailable;
+                DataStore.CrewMembers[employeeID] = crew;
+                CsvHelper.SaveCrewMembers();
+
+                int removedCount = 0;
+
+                if (markingUnavailable)
+                {
+                    List<FlightCrew> futureAssignments = DataStore.FlightCrew
+                        .Where(fc => fc.EmployeeID == employeeID &&
+                                     DataStore.Flights.ContainsKey(fc.FlightNumber) &&
+                                     DataStore.Flights[fc.FlightNumber].Status != FlightStatus.Departed &&
+                                     DataStore.Flights[fc.FlightNumber].Status != FlightStatus.Arrived &&
+                                     DataStore.Flights[fc.FlightNumber].Status != FlightStatus.Cancelled)
+                        .ToList();
+
+                    removedCount = futureAssignments.Count;
+
+                    if (removedCount > 0)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine($"\n  Removing from {removedCount} future flight(s):");
+
+                        foreach (FlightCrew fc in futureAssignments)
+                        {
+                            Console.WriteLine($"   - {fc.FlightNumber} ({DataStore.Flights[fc.FlightNumber].ScheduledDeparture:yyyy-MM-dd HH:mm})");
+                            DataStore.FlightCrew.RemoveAll(x =>
+                                x.EmployeeID == employeeID &&
+                                x.FlightNumber == fc.FlightNumber);
+                        }
+
+                        Console.ResetColor();
+                        CsvHelper.SaveFlightCrew();
+                    }
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine("\n  No future flight assignments affected.");
+                        Console.ResetColor();
+                    }
+                }
+
+                CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole,
+                    "UPDATE", "CrewMember",
+                    $"Crew '{employeeID}' marked {newStatus}. {removedCount} future assignment(s) removed.");
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"\n  {crew.FullName} marked as {newStatus}. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+        }
+
+        public static string GetEmployeeID()
+        {
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("\n  Employee ID (0 to cancel): ");
+            Console.ResetColor();
+            return Console.ReadLine()?.Trim().ToUpper() ?? "";
         }
     }
 
