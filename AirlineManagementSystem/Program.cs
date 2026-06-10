@@ -3106,6 +3106,74 @@ namespace AirlineManagementSystem
             }
         }
 
+        public static void DeleteCrewMember()
+        {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("╔══════════════════════════════════════════╗");
+            Console.WriteLine("║            DELETE CREW MEMBER            ║");
+            Console.WriteLine("╚══════════════════════════════════════════╝");
+            Console.ResetColor();
+
+            while (true)
+            {
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Enter Employee ID (0 to cancel): ");
+                Console.ResetColor();
+                string employeeID = Console.ReadLine()?.Trim().ToUpper() ?? "";
+
+                if (employeeID == "0") return;
+
+                if (!DataStore.CrewMembers.ContainsKey(employeeID))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Employee not found. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                bool hasFutureFlights = DataStore.FlightCrew
+                    .Any(fc => fc.EmployeeID == employeeID &&
+                               DataStore.Flights.ContainsKey(fc.FlightNumber) &&
+                               DataStore.Flights[fc.FlightNumber].ScheduledDeparture > DateTime.Now &&
+                               DataStore.Flights[fc.FlightNumber].Status != FlightStatus.Cancelled);
+
+                if (hasFutureFlights)
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine("\n  This crew member has future flight assignments.");
+                    Console.WriteLine("  [1] Remove all assignments and delete");
+                    Console.WriteLine("  [Enter] Abort");
+                    Console.ResetColor();
+
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                    Console.Write("\n  Choice: ");
+                    Console.ResetColor();
+
+                    if (Console.ReadLine()?.Trim() != "1")
+                        continue;
+                }
+
+                int removedCount = DataStore.FlightCrew.Count(fc => fc.EmployeeID == employeeID);
+                DataStore.FlightCrew.RemoveAll(fc => fc.EmployeeID == employeeID);
+                DataStore.CrewMembers.Remove(employeeID);
+
+                CsvHelper.SaveCrewMembers();
+                CsvHelper.SaveFlightCrew();
+
+                CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole,
+                    "DELETE", "CrewMember",
+                    $"Crew '{employeeID}' deleted with {removedCount} assignment(s) removed.");
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("\n  Crew member deleted successfully. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+        }
+
         public static void AssignCrewToFlightMenu()
         {
             Console.Clear();
