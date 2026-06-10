@@ -5623,7 +5623,75 @@ namespace AirlineManagementSystem
 
         static void ViewAllPromotions()
         {
+            List<Promotion> promotions = DataStore.Promotions.Values.ToList();
 
+            if (promotions.Count == 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n  No promotions found. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            int totalPages = (int)Math.Ceiling(promotions.Count / (double)Constants.PageSize);
+            int currentPage = 1;
+
+            while (true)
+            {
+                Console.Clear();
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine("╔══════════════════════════════════════════╗");
+                Console.WriteLine("║               ALL PROMOTIONS             ║");
+                Console.WriteLine("╚══════════════════════════════════════════╝");
+                Console.ResetColor();
+
+                List<Promotion> pageItems = promotions
+                    .Skip((currentPage - 1) * Constants.PageSize)
+                    .Take(Constants.PageSize)
+                    .ToList();
+
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine(
+                    $"\n  {"Code",-12} {"Discount",-10} {"StartDate",-12} {"EndDate",-12} {"MaxUses",-10} {"Used",-6} {"Class",-10} {"Active",-8}"
+                );
+                Console.WriteLine(new string('-', 85));
+                Console.ResetColor();
+
+                foreach (Promotion p in pageItems)
+                {
+                    Console.ForegroundColor = p.IsActive && p.EndDate >= DateTime.Today
+                        ? ConsoleColor.Green
+                        : ConsoleColor.Red;
+
+                    Console.WriteLine(
+                        $"  {p.PromoCode,-12}" +
+                        $" {p.DiscountPercentage,7:0.##}%  " +
+                        $" {p.StartDate:yyyy-MM-dd}  " +
+                        $" {p.EndDate:yyyy-MM-dd}  " +
+                        $" {p.MaxUses,-10}" +
+                        $" {p.CurrentUseCount,-6}" +
+                        $" {p.ApplicableClass,-10}" +
+                        $" {(p.IsActive ? "Yes" : "No"),-8}"
+                    );
+                }
+
+                Console.ResetColor();
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"\n  Page {currentPage} of {totalPages}  |  Total: {promotions.Count} promotion(s)");
+                Console.WriteLine("  [N] Next   [P] Previous   [0] Back");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Choice: ");
+                Console.ResetColor();
+
+                string input = Console.ReadLine()?.Trim().ToUpper() ?? "";
+
+                if (input == "0") return;
+                else if (input == "N" && currentPage < totalPages) currentPage++;
+                else if (input == "P" && currentPage > 1) currentPage--;
+            }
         }
 
         static void UpdatePromotion()
