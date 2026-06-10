@@ -2719,9 +2719,9 @@ namespace AirlineManagementSystem
                     case "1": AddCrewMember(); break;
                     case "2": ViewAllCrew(); break;
                     case "3": UpdateCrewMember(); break;
-                    case "4": //DeleteCrewMember(); break;
+                    case "4": DeleteCrewMember(); break;
                     case "5": AssignCrewToFlightMenu(); break;
-                    case "6": //RemoveCrewFromFlight(); break;
+                    case "6": RemoveCrewFromFlight(); break;
                     case "7": //ViewCrewSchedule(); break;
                     case "8": //FlagAvailability(); break;
                     case "0": return;
@@ -3341,6 +3341,107 @@ namespace AirlineManagementSystem
             }
 
             return true;
+        }
+
+        public static void RemoveCrewFromFlight()
+        {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("╔══════════════════════════════════════════╗");
+            Console.WriteLine("║         REMOVE CREW FROM FLIGHT          ║");
+            Console.WriteLine("╚══════════════════════════════════════════╝");
+            Console.ResetColor();
+
+            while (true)
+            {
+                string flightNumber = FlightService.GetFlightNumber();
+                if (flightNumber == "0") return;
+
+                if (!DataStore.Flights.ContainsKey(flightNumber))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Flight not found. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                Flight flight = DataStore.Flights[flightNumber];
+
+                if (flight.Status == FlightStatus.Departed ||
+                    flight.Status == FlightStatus.Arrived)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"\n  Cannot modify crew on a {flight.Status} flight. Press Enter.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    return;
+                }
+
+                List<FlightCrew> assignments = DataStore.FlightCrew
+                    .Where(fc => fc.FlightNumber == flightNumber)
+                    .ToList();
+
+                if (assignments.Count == 0)
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine("\n  No crew assigned to this flight. Press Enter.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    return;
+                }
+
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine($"\n  {"EmployeeID",-12} {"Name",-25} {"Role",-14} {"Airline",-10}");
+                Console.WriteLine(new string('-', 64));
+                Console.ResetColor();
+
+                foreach (FlightCrew fc in assignments)
+                {
+                    if (!DataStore.CrewMembers.ContainsKey(fc.EmployeeID)) continue;
+                    CrewMember cm = DataStore.CrewMembers[fc.EmployeeID];
+                    Console.WriteLine(
+                        $"  {cm.EmployeeID,-12}" +
+                        $" {cm.FullName,-25}" +
+                        $" {cm.Role,-14}" +
+                        $" {cm.AirlineICAO,-10}"
+                    );
+                }
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Employee ID to remove (0 to cancel): ");
+                Console.ResetColor();
+                string employeeID = Console.ReadLine()?.Trim().ToUpper() ?? "";
+
+                if (employeeID == "0") return;
+
+                bool assigned = DataStore.FlightCrew
+                    .Any(fc => fc.FlightNumber == flightNumber && fc.EmployeeID == employeeID);
+
+                if (!assigned)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  This crew member is not assigned to this flight. Press Enter.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                DataStore.FlightCrew.RemoveAll(fc =>
+                    fc.FlightNumber == flightNumber && fc.EmployeeID == employeeID);
+
+                CsvHelper.SaveFlightCrew();
+
+                CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole,
+                    "UPDATE", "FlightCrew",
+                    $"Crew '{employeeID}' removed from flight '{flightNumber}'.");
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("\n  Crew member removed successfully. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
         }
     }
 
