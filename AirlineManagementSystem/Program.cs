@@ -2836,7 +2836,7 @@ namespace AirlineManagementSystem
                 while (DataStore.CrewMembers.ContainsKey(employeeID))
                 {
                     int num = int.Parse(employeeID.Substring(2)) + 1;
-                    employeeID = $"CM{num:D3}";
+                    employeeID = $"CM{num:D5}";
                 }
 
                 CrewMember newCrew = new CrewMember
