@@ -5475,7 +5475,150 @@ namespace AirlineManagementSystem
 
         static void AddPromotion()
         {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("╔══════════════════════════════════════════╗");
+            Console.WriteLine("║               ADD PROMO CODE             ║");
+            Console.WriteLine("╚══════════════════════════════════════════╝");
+            Console.ResetColor();
 
+            while (true)
+            {
+                string promoCode = GetPromoCode();
+                if (promoCode == "0") return;
+
+                if (DataStore.Promotions.ContainsKey(promoCode))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Promo code already exists. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                // Discount Percentage
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("  Discount Percentage (1-100): ");
+                Console.ResetColor();
+                if (!decimal.TryParse(Console.ReadLine()?.Trim(), out decimal discount) ||
+                    discount < 1 || discount > 100)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid percentage. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                // Start Date
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("  Start Date (yyyy-MM-dd): ");
+                Console.ResetColor();
+                if (!DateTime.TryParseExact(Console.ReadLine()?.Trim(), "yyyy-MM-dd",
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.None, out DateTime startDate))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid date format. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                // End Date
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("  End Date (yyyy-MM-dd): ");
+                Console.ResetColor();
+                if (!DateTime.TryParseExact(Console.ReadLine()?.Trim(), "yyyy-MM-dd",
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.None, out DateTime endDate))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid date format. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                if (endDate <= DateTime.Today)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  End date must be in the future. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                if (endDate <= startDate)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  End date must be after start date. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                // Max Uses
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("  Max Uses: ");
+                Console.ResetColor();
+                if (!int.TryParse(Console.ReadLine()?.Trim(), out int maxUses) || maxUses < 1)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid max uses. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                // Applicable Class
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("  [1] Economy  [2] Business  [3] Both");
+                Console.ResetColor();
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("  Applicable Class: ");
+                Console.ResetColor();
+
+                PromotionApplicableClass applicableClass;
+                switch (Console.ReadLine()?.Trim())
+                {
+                    case "1": applicableClass = PromotionApplicableClass.Economy; break;
+                    case "2": applicableClass = PromotionApplicableClass.Business; break;
+                    case "3": applicableClass = PromotionApplicableClass.Both; break;
+                    default:
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("\n  Invalid option. Press Enter to try again.");
+                        Console.ResetColor();
+                        Console.ReadLine();
+                        continue;
+                }
+
+                // Build and save
+                Promotion newPromotion = new Promotion
+                {
+                    PromoCode = promoCode,
+                    DiscountPercentage = discount,
+                    StartDate = startDate,
+                    EndDate = endDate,
+                    MaxUses = maxUses,
+                    CurrentUseCount = 0,
+                    ApplicableClass = applicableClass,
+                    IsActive = true
+                };
+
+                DataStore.Promotions[promoCode] = newPromotion;
+                CsvHelper.SavePromotions();
+
+                CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole,
+                    "CREATE", "Promotion",
+                    $"Promo '{promoCode}' created. Discount: {discount}%, Class: {applicableClass}, Expires: {endDate:yyyy-MM-dd}.");
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("\n  Promotion added successfully. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
         }
 
         static void ViewAllPromotions()
