@@ -2687,6 +2687,91 @@ namespace AirlineManagementSystem
 
     static class CrewService
     {
+        // ─── ENTRY POINT ─────────────────────────────────────────────────────────
+
+        public static void Show()
+        {
+            while (true)
+            {
+                Console.Clear();
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine("╔══════════════════════════════════════════╗");
+                Console.WriteLine("║              CREW MANAGEMENT             ║");
+                Console.WriteLine("╚══════════════════════════════════════════╝");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n  [1] Add Crew Member");
+                Console.WriteLine("  [2] View All Crew");
+                Console.WriteLine("  [3] Update Crew Member");
+                Console.WriteLine("  [4] Delete Crew Member");
+                Console.WriteLine("  [5] Assign Crew to Flight");
+                Console.WriteLine("  [6] Remove Crew from Flight");
+                Console.WriteLine("  [7] View Crew Schedule");
+                Console.WriteLine("  [8] Flag Crew Availability");
+                Console.WriteLine("  [0] Back");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Choice: ");
+                Console.ResetColor();
+
+                switch (Console.ReadLine()?.Trim())
+                {
+                    case "1": //AddCrewMember(); break;
+                    case "2": //ViewAllCrew(); break;
+                    case "3": //UpdateCrewMember(); break;
+                    case "4": //DeleteCrewMember(); break;
+                    case "5": AssignCrewToFlightMenu(); break;
+                    case "6": //RemoveCrewFromFlight(); break;
+                    case "7": //ViewCrewSchedule(); break;
+                    case "8": //FlagAvailability(); break;
+                    case "0": return;
+                }
+            }
+        }
+
+        public static void AssignCrewToFlightMenu()
+        {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("╔══════════════════════════════════════════╗");
+            Console.WriteLine("║          ASSIGN CREW TO FLIGHT           ║");
+            Console.WriteLine("╚══════════════════════════════════════════╝");
+            Console.ResetColor();
+
+            while (true)
+            {
+                string flightNumber = FlightService.GetFlightNumber();
+                if (flightNumber == "0") return;
+
+                if (!DataStore.Flights.ContainsKey(flightNumber))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Flight not found. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                Flight flight = DataStore.Flights[flightNumber];
+
+                if (flight.Status == FlightStatus.Departed ||
+                    flight.Status == FlightStatus.Arrived ||
+                    flight.Status == FlightStatus.Cancelled)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"\n  Cannot assign crew to a {flight.Status} flight. Press Enter.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    return;
+                }
+
+                AssignCrewToFlight(flightNumber);
+                return;
+            }
+        }
+
         public static bool AssignCrewToFlight(string flightNumber)
         {
             Console.WriteLine("\n  ----------- ASSIGN CREW -----------");
@@ -2747,6 +2832,15 @@ namespace AirlineManagementSystem
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"\n  Employee '{input}' not found.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                if (!DataStore.CrewMembers[input].IsAvailable)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  This crew member is flagged as unavailable.");
                     Console.ResetColor();
                     Console.ReadLine();
                     continue;
@@ -6447,7 +6541,7 @@ namespace AirlineManagementSystem
                         PassengerService.Show();
                         break;
                     case "4":
-                        //FlightService.Show();
+                        CrewService.Show();
                         break;
                     case "5":
                         PromotionService.Show();
