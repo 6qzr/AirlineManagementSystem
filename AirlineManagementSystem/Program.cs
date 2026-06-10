@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Timers;
@@ -5961,7 +5962,68 @@ namespace AirlineManagementSystem
 
         static void ViewUsageSummary()
         {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("╔══════════════════════════════════════════╗");
+            Console.WriteLine("║          PROMOTION USAGE SUMMARY         ║");
+            Console.WriteLine("╚══════════════════════════════════════════╝");
+            Console.ResetColor();
 
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine(
+                $"\n  {"Code",-12} {"Discount",-10} {"Class",-10} {"MaxUses",-10} {"Used",-8} {"Remaining",-10} {"TotalDiscount",-15} {"Active",-8}"
+            );
+            Console.WriteLine(new string('-', 90));
+            Console.ResetColor();
+
+            foreach (Promotion p in DataStore.Promotions.Values)
+            {
+                List<Ticket> usedTickets = DataStore.Tickets.Values
+                    .Where(t => t.PromoCode == p.PromoCode)
+                    .ToList();
+
+
+                /*
+                 *  The back-calculation is an approximation — it gives you roughly what was discounted
+                 *  but not the exact dollar amount since price at promo-step time was already reduced 
+                 *  by previous discounts.
+                 *  
+                 *  If you want the exact discount amount, the only clean fix is to store it at booking time. Add one line in BookTicket right after the promo discount is calculated:
+                 *   
+                 *  decimal promoDiscount = price * (promo.DiscountPercentage / 100);
+                 *  price -= promoDiscount;
+                 *  // store it
+                 *  ticket.PromoDiscount = promoDiscount;  // needs a field on Ticket struct + CSV column
+                 */
+                decimal totalDiscount = usedTickets.Sum(t =>
+                {
+                    if (!DataStore.Promotions.ContainsKey(t.PromoCode)) return 0m;
+                    Promotion promo = DataStore.Promotions[t.PromoCode];
+                    return t.FinalPrice * (promo.DiscountPercentage / 100m);
+                });
+                int remaining = p.MaxUses - p.CurrentUseCount;
+
+                Console.ForegroundColor = p.IsActive && p.EndDate >= DateTime.Today
+                    ? ConsoleColor.Green
+                    : ConsoleColor.Red;
+
+                Console.WriteLine(
+                    $"  {p.PromoCode,-12}" +
+                    $" {p.DiscountPercentage,7:0.##}%  " +
+                    $" {p.ApplicableClass,-10}" +
+                    $" {p.MaxUses,-10}" +
+                    $" {p.CurrentUseCount,-8}" +
+                    $" {remaining,-10}" +
+                    $" {totalDiscount,-15:C}" +
+                    $" {(p.IsActive ? "Yes" : "No"),-8}"
+                );
+            }
+
+            Console.ResetColor();
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("\n  Press Enter to go back.");
+            Console.ResetColor();
+            Console.ReadLine();
         }
     }
 
