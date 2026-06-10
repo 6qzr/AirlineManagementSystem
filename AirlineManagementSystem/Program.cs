@@ -2719,7 +2719,7 @@ namespace AirlineManagementSystem
                 switch (Console.ReadLine()?.Trim())
                 {
                     case "1": AddCrewMember(); break;
-                    case "2": //ViewAllCrew(); break;
+                    case "2": ViewAllCrew(); break;
                     case "3": //UpdateCrewMember(); break;
                     case "4": //DeleteCrewMember(); break;
                     case "5": AssignCrewToFlightMenu(); break;
@@ -2744,6 +2744,7 @@ namespace AirlineManagementSystem
 
             while (true)
             {
+                // Full Name
                 Console.ForegroundColor = ConsoleColor.Gray;
                 Console.Write("\n  Full Name: ");
                 Console.ResetColor();
@@ -2757,12 +2758,8 @@ namespace AirlineManagementSystem
                     Console.ReadLine();
                     continue;
                 }
-               
-                Console.ForegroundColor = ConsoleColor.Gray;
-                Console.Write("  Phone Number: ");
-                Console.ResetColor();
-                string phone = Console.ReadLine()?.Trim() ?? "";
 
+                // Role
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("\n  [1] Pilot  [2] CoPilot  [3] CabinCrew  [4] GroundStaff");
                 Console.ResetColor();
@@ -2785,6 +2782,59 @@ namespace AirlineManagementSystem
                         continue;
                 }
 
+                // Nationality
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("  Nationality: ");
+                Console.ResetColor();
+                string nationality = Console.ReadLine()?.Trim() ?? "";
+
+                // License Number
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("  License Number: ");
+                Console.ResetColor();
+                string licenseNumber = Console.ReadLine()?.Trim() ?? "";
+
+                bool licenseExists = DataStore.CrewMembers.Values
+                    .Any(c => c.LicenseNumber.ToLower() == licenseNumber.ToLower());
+
+                if (licenseExists)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  License number already in use. Press Enter.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                // Airline ICAO
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("  Airline ICAO Code: ");
+                Console.ResetColor();
+                string airlineICAO = Console.ReadLine()?.Trim().ToUpper() ?? "";
+
+                if (!DataStore.Airlines.ContainsKey(airlineICAO))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Airline not found. Press Enter.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                // Years of Experience
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("  Years of Experience: ");
+                Console.ResetColor();
+
+                if (!int.TryParse(Console.ReadLine()?.Trim(), out int yearsOfExperience) || yearsOfExperience < 0)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Invalid years of experience. Press Enter.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
                 // Generate ID
                 string employeeID = $"CM{DataStore.CrewMembers.Count + 1:D3}";
                 while (DataStore.CrewMembers.ContainsKey(employeeID))
@@ -2798,6 +2848,10 @@ namespace AirlineManagementSystem
                     EmployeeID = employeeID,
                     FullName = fullName,
                     Role = role,
+                    Nationality = nationality,
+                    LicenseNumber = licenseNumber,
+                    AirlineICAO = airlineICAO,
+                    YearsOfExperience = yearsOfExperience,
                     IsAvailable = true
                 };
 
@@ -2806,13 +2860,85 @@ namespace AirlineManagementSystem
 
                 CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole,
                     "CREATE", "CrewMember",
-                    $"Crew '{employeeID}' ({fullName}, {role}) added.");
+                    $"Crew '{employeeID}' ({fullName}, {role}, {airlineICAO}) added.");
 
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($"\n  Crew member '{employeeID}' added successfully. Press Enter.");
                 Console.ResetColor();
                 Console.ReadLine();
                 return;
+            }
+        }
+
+        // ─── VIEW ALL ─────────────────────────────────────────────────────────────
+
+        public static void ViewAllCrew()
+        {
+            List<CrewMember> crew = DataStore.CrewMembers.Values.ToList();
+
+            if (crew.Count == 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n  No crew members found. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            int totalPages = (int)Math.Ceiling((double)crew.Count / Constants.PageSize);
+            int currentPage = 1;
+
+            while (true)
+            {
+                Console.Clear();
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine("╔══════════════════════════════════════════╗");
+                Console.WriteLine("║              ALL CREW MEMBERS             ║");
+                Console.WriteLine("╚══════════════════════════════════════════╝");
+                Console.ResetColor();
+
+                List<CrewMember> pageItems = crew
+                    .Skip((currentPage - 1) * Constants.PageSize)
+                    .Take(Constants.PageSize)
+                    .ToList();
+
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine(
+                    $"\n  {"ID",-10} {"Full Name",-22} {"Role",-14} {"Nationality",-14} {"License",-14} {"Airline",-10} {"Exp",-5} {"Available",-10}"
+                );
+                Console.WriteLine(new string('-', 102));
+                Console.ResetColor();
+
+                foreach (CrewMember c in pageItems)
+                {
+                    Console.ForegroundColor = c.IsAvailable ? ConsoleColor.Green : ConsoleColor.Red;
+                    Console.WriteLine(
+                        $"  {c.EmployeeID,-10}" +
+                        $" {c.FullName,-22}" +
+                        $" {c.Role,-14}" +
+                        $" {c.Nationality,-14}" +
+                        $" {c.LicenseNumber,-14}" +
+                        $" {c.AirlineICAO,-10}" +
+                        $" {c.YearsOfExperience,-5}" +
+                        $" {(c.IsAvailable ? "Yes" : "No"),-10}"
+                    );
+                }
+
+                Console.ResetColor();
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"\n  Page {currentPage} of {totalPages}  |  Total: {crew.Count} crew member(s)");
+                Console.WriteLine("  [N] Next   [P] Previous   [0] Back");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Choice: ");
+                Console.ResetColor();
+
+                string input = Console.ReadLine()?.Trim().ToUpper() ?? "";
+
+                if (input == "0") return;
+                else if (input == "N" && currentPage < totalPages) currentPage++;
+                else if (input == "P" && currentPage > 1) currentPage--;
             }
         }
 
