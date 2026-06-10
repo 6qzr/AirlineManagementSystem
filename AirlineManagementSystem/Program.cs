@@ -2718,7 +2718,7 @@ namespace AirlineManagementSystem
 
                 switch (Console.ReadLine()?.Trim())
                 {
-                    case "1": //AddCrewMember(); break;
+                    case "1": AddCrewMember(); break;
                     case "2": //ViewAllCrew(); break;
                     case "3": //UpdateCrewMember(); break;
                     case "4": //DeleteCrewMember(); break;
@@ -2728,6 +2728,91 @@ namespace AirlineManagementSystem
                     case "8": //FlagAvailability(); break;
                     case "0": return;
                 }
+            }
+        }
+
+        // ─── ADD ─────────────────────────────────────────────────────────────────
+
+        public static void AddCrewMember()
+        {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("╔══════════════════════════════════════════╗");
+            Console.WriteLine("║              ADD CREW MEMBER             ║");
+            Console.WriteLine("╚══════════════════════════════════════════╝");
+            Console.ResetColor();
+
+            while (true)
+            {
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Full Name: ");
+                Console.ResetColor();
+                string fullName = Console.ReadLine()?.Trim() ?? "";
+
+                if (string.IsNullOrEmpty(fullName))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Name cannot be empty. Press Enter.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+               
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("  Phone Number: ");
+                Console.ResetColor();
+                string phone = Console.ReadLine()?.Trim() ?? "";
+
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n  [1] Pilot  [2] CoPilot  [3] CabinCrew  [4] GroundStaff");
+                Console.ResetColor();
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("  Role: ");
+                Console.ResetColor();
+
+                CrewMemberRole role;
+                switch (Console.ReadLine()?.Trim())
+                {
+                    case "1": role = CrewMemberRole.Pilot; break;
+                    case "2": role = CrewMemberRole.CoPilot; break;
+                    case "3": role = CrewMemberRole.CabinCrew; break;
+                    case "4": role = CrewMemberRole.GroundStaff; break;
+                    default:
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("\n  Invalid role. Press Enter.");
+                        Console.ResetColor();
+                        Console.ReadLine();
+                        continue;
+                }
+
+                // Generate ID
+                string employeeID = $"CM{DataStore.CrewMembers.Count + 1:D3}";
+                while (DataStore.CrewMembers.ContainsKey(employeeID))
+                {
+                    int num = int.Parse(employeeID.Substring(2)) + 1;
+                    employeeID = $"CM{num:D3}";
+                }
+
+                CrewMember newCrew = new CrewMember
+                {
+                    EmployeeID = employeeID,
+                    FullName = fullName,
+                    Role = role,
+                    IsAvailable = true
+                };
+
+                DataStore.CrewMembers[employeeID] = newCrew;
+                CsvHelper.SaveCrewMembers();
+
+                CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole,
+                    "CREATE", "CrewMember",
+                    $"Crew '{employeeID}' ({fullName}, {role}) added.");
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"\n  Crew member '{employeeID}' added successfully. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
             }
         }
 
