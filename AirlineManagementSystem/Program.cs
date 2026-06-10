@@ -2722,7 +2722,7 @@ namespace AirlineManagementSystem
                     case "4": DeleteCrewMember(); break;
                     case "5": AssignCrewToFlightMenu(); break;
                     case "6": RemoveCrewFromFlight(); break;
-                    case "7": //ViewCrewSchedule(); break;
+                    case "7": ViewCrewSchedule(); break;
                     case "8": //FlagAvailability(); break;
                     case "0": return;
                 }
@@ -3441,6 +3441,111 @@ namespace AirlineManagementSystem
                 Console.ResetColor();
                 Console.ReadLine();
                 return;
+            }
+        }
+
+        public static void ViewCrewSchedule()
+        {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("╔══════════════════════════════════════════╗");
+            Console.WriteLine("║               CREW SCHEDULE              ║");
+            Console.WriteLine("╚══════════════════════════════════════════╝");
+            Console.ResetColor();
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("\n  Employee ID to filter (Enter for all): ");
+            Console.ResetColor();
+            string filterID = Console.ReadLine()?.Trim().ToUpper() ?? "";
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("  From date (yyyy-MM-dd) or Enter to skip: ");
+            Console.ResetColor();
+            DateTime.TryParse(Console.ReadLine()?.Trim(), out DateTime fromDate);
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write("  To date   (yyyy-MM-dd) or Enter to skip: ");
+            Console.ResetColor();
+            DateTime.TryParse(Console.ReadLine()?.Trim(), out DateTime toDate);
+
+            if (fromDate == default) fromDate = DateTime.MinValue;
+            if (toDate == default) toDate = DateTime.MaxValue;
+
+            var schedule = DataStore.FlightCrew
+                .Where(fc =>
+                    (string.IsNullOrEmpty(filterID) || fc.EmployeeID == filterID) &&
+                    DataStore.Flights.ContainsKey(fc.FlightNumber) &&
+                    DataStore.CrewMembers.ContainsKey(fc.EmployeeID) &&
+                    DataStore.Flights[fc.FlightNumber].ScheduledDeparture.Date >= fromDate.Date &&
+                    DataStore.Flights[fc.FlightNumber].ScheduledDeparture.Date <= toDate.Date)
+                .Select(fc => (
+                    Crew: DataStore.CrewMembers[fc.EmployeeID],
+                    Flight: DataStore.Flights[fc.FlightNumber]))
+                .OrderBy(x => x.Flight.ScheduledDeparture)
+                .ToList();
+
+            if (schedule.Count == 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("\n  No assignments found for the selected filters. Press Enter.");
+                Console.ResetColor();
+                Console.ReadLine();
+                return;
+            }
+
+            int totalPages = (int)Math.Ceiling((double)schedule.Count / Constants.PageSize);
+            int currentPage = 1;
+
+            while (true)
+            {
+                Console.Clear();
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine("╔══════════════════════════════════════════╗");
+                Console.WriteLine("║               CREW SCHEDULE              ║");
+                Console.WriteLine("╚══════════════════════════════════════════╝");
+                Console.ResetColor();
+
+                var pageItems = schedule
+                    .Skip((currentPage - 1) * Constants.PageSize)
+                    .Take(Constants.PageSize)
+                    .ToList();
+
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine(
+                    $"\n  {"ID",-10} {"Name",-22} {"Role",-14} {"Airline",-10} {"Flight",-10} {"Origin",-8} {"Dest",-8} {"Departure",-18} {"Status",-12}"
+                );
+                Console.WriteLine(new string('-', 115));
+                Console.ResetColor();
+
+                foreach (var (crew, flight) in pageItems)
+                {
+                    Console.WriteLine(
+                        $"  {crew.EmployeeID,-10}" +
+                        $" {crew.FullName,-22}" +
+                        $" {crew.Role,-14}" +
+                        $" {crew.AirlineICAO,-10}" +
+                        $" {flight.FlightNumber,-10}" +
+                        $" {flight.OriginAirportCode,-8}" +
+                        $" {flight.DestinationAirportCode,-8}" +
+                        $" {flight.ScheduledDeparture:yyyy-MM-dd HH:mm,-18}" +
+                        $" {flight.Status,-12}"
+                    );
+                }
+
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"\n  Page {currentPage} of {totalPages}  |  Total: {schedule.Count} assignment(s)");
+                Console.WriteLine("  [N] Next   [P] Previous   [0] Back");
+                Console.ResetColor();
+
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Choice: ");
+                Console.ResetColor();
+
+                string nav = Console.ReadLine()?.Trim().ToUpper() ?? "";
+
+                if (nav == "0") return;
+                else if (nav == "N" && currentPage < totalPages) currentPage++;
+                else if (nav == "P" && currentPage > 1) currentPage--;
             }
         }
     }
