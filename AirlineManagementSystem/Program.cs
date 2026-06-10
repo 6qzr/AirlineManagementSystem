@@ -2687,8 +2687,6 @@ namespace AirlineManagementSystem
 
     static class CrewService
     {
-        // ─── ENTRY POINT ─────────────────────────────────────────────────────────
-
         public static void Show()
         {
             while (true)
@@ -2720,7 +2718,7 @@ namespace AirlineManagementSystem
                 {
                     case "1": AddCrewMember(); break;
                     case "2": ViewAllCrew(); break;
-                    case "3": //UpdateCrewMember(); break;
+                    case "3": UpdateCrewMember(); break;
                     case "4": //DeleteCrewMember(); break;
                     case "5": AssignCrewToFlightMenu(); break;
                     case "6": //RemoveCrewFromFlight(); break;
@@ -2730,8 +2728,6 @@ namespace AirlineManagementSystem
                 }
             }
         }
-
-        // ─── ADD ─────────────────────────────────────────────────────────────────
 
         public static void AddCrewMember()
         {
@@ -2870,8 +2866,6 @@ namespace AirlineManagementSystem
             }
         }
 
-        // ─── VIEW ALL ─────────────────────────────────────────────────────────────
-
         public static void ViewAllCrew()
         {
             List<CrewMember> crew = DataStore.CrewMembers.Values.ToList();
@@ -2939,6 +2933,176 @@ namespace AirlineManagementSystem
                 if (input == "0") return;
                 else if (input == "N" && currentPage < totalPages) currentPage++;
                 else if (input == "P" && currentPage > 1) currentPage--;
+            }
+        }
+
+        public static void UpdateCrewMember()
+        {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("╔══════════════════════════════════════════╗");
+            Console.WriteLine("║            UPDATE CREW MEMBER            ║");
+            Console.WriteLine("╚══════════════════════════════════════════╝");
+            Console.ResetColor();
+
+            while (true)
+            {
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\n  Enter Employee ID (0 to cancel): ");
+                Console.ResetColor();
+                string employeeID = Console.ReadLine()?.Trim().ToUpper() ?? "";
+
+                if (employeeID == "0") return;
+
+                if (!DataStore.CrewMembers.ContainsKey(employeeID))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("\n  Employee not found. Press Enter to try again.");
+                    Console.ResetColor();
+                    Console.ReadLine();
+                    continue;
+                }
+
+                CrewMember crew = DataStore.CrewMembers[employeeID];
+
+                while (true)
+                {
+                    Console.Clear();
+                    Console.ForegroundColor = ConsoleColor.Cyan;
+                    Console.WriteLine($"  Update Crew — {crew.EmployeeID} ({crew.FullName})");
+                    Console.ResetColor();
+
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine($"\n  [1] Full Name         ({crew.FullName})");
+                    Console.WriteLine($"  [2] Role              ({crew.Role})");
+                    Console.WriteLine($"  [3] Nationality       ({crew.Nationality})");
+                    Console.WriteLine($"  [4] License Number    ({crew.LicenseNumber})");
+                    Console.WriteLine($"  [5] Airline ICAO      ({crew.AirlineICAO})");
+                    Console.WriteLine($"  [6] Years Experience  ({crew.YearsOfExperience})");
+                    Console.WriteLine("  [0] Back");
+                    Console.ResetColor();
+
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                    Console.Write("\n  Choice: ");
+                    Console.ResetColor();
+
+                    string updatedField = "";
+                    string choice = Console.ReadLine()?.Trim() ?? "";
+
+                    switch (choice)
+                    {
+                        case "1":
+                            Console.Write("  New Full Name: ");
+                            string name = Console.ReadLine()?.Trim() ?? "";
+                            if (!string.IsNullOrEmpty(name))
+                            {
+                                updatedField = $"FullName -> {name}";
+                                crew.FullName = name;
+                            }
+                            break;
+
+                        case "2":
+                            Console.ForegroundColor = ConsoleColor.Yellow;
+                            Console.WriteLine("  [1] Pilot  [2] CoPilot  [3] CabinCrew  [4] GroundStaff");
+                            Console.ResetColor();
+                            Console.Write("  New Role: ");
+                            CrewMemberRole newRole;
+                            switch (Console.ReadLine()?.Trim())
+                            {
+                                case "1": newRole = CrewMemberRole.Pilot; break;
+                                case "2": newRole = CrewMemberRole.CoPilot; break;
+                                case "3": newRole = CrewMemberRole.CabinCrew; break;
+                                case "4": newRole = CrewMemberRole.GroundStaff; break;
+                                default:
+                                    Console.ForegroundColor = ConsoleColor.Red;
+                                    Console.WriteLine("\n  Invalid role. Press Enter.");
+                                    Console.ResetColor();
+                                    Console.ReadLine();
+                                    continue;
+                            }
+                            updatedField = $"Role -> {newRole}";
+                            crew.Role = newRole;
+                            break;
+
+                        case "3":
+                            Console.Write("  New Nationality: ");
+                            string nat = Console.ReadLine()?.Trim() ?? "";
+                            if (!string.IsNullOrEmpty(nat))
+                            {
+                                updatedField = $"Nationality -> {nat}";
+                                crew.Nationality = nat;
+                            }
+                            break;
+
+                        case "4":
+                            Console.Write("  New License Number: ");
+                            string license = Console.ReadLine()?.Trim() ?? "";
+                            bool licTaken = DataStore.CrewMembers.Values
+                                .Any(c => c.LicenseNumber.ToLower() == license.ToLower() &&
+                                          c.EmployeeID != employeeID);
+                            if (licTaken)
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("\n  License already in use. Press Enter.");
+                                Console.ResetColor();
+                                Console.ReadLine();
+                            }
+                            else if (!string.IsNullOrEmpty(license))
+                            {
+                                updatedField = $"LicenseNumber -> {license}";
+                                crew.LicenseNumber = license;
+                            }
+                            break;
+
+                        case "5":
+                            Console.Write("  New Airline ICAO: ");
+                            string icao = Console.ReadLine()?.Trim().ToUpper() ?? "";
+                            if (!DataStore.Airlines.ContainsKey(icao))
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("\n  Airline not found. Press Enter.");
+                                Console.ResetColor();
+                                Console.ReadLine();
+                            }
+                            else
+                            {
+                                updatedField = $"AirlineICAO -> {icao}";
+                                crew.AirlineICAO = icao;
+                            }
+                            break;
+
+                        case "6":
+                            Console.Write("  New Years of Experience: ");
+                            if (int.TryParse(Console.ReadLine()?.Trim(), out int exp) && exp >= 0)
+                            {
+                                updatedField = $"YearsOfExperience -> {exp}";
+                                crew.YearsOfExperience = exp;
+                            }
+                            else
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("\n  Invalid value. Press Enter.");
+                                Console.ResetColor();
+                                Console.ReadLine();
+                            }
+                            break;
+
+                        case "0":
+                            CsvHelper.SaveCrewMembers();
+                            return;
+
+                        default:
+                            continue;
+                    }
+
+                    if (!string.IsNullOrEmpty(updatedField))
+                    {
+                        DataStore.CrewMembers[employeeID] = crew;
+                        CsvHelper.WriteSystemLog(Session.CurrentUserID, Session.CurrentUserRole,
+                            "UPDATE", "CrewMember",
+                            $"Crew '{employeeID}' updated: {updatedField}.");
+                    }
+                }
             }
         }
 
