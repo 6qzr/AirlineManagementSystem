@@ -295,22 +295,36 @@ namespace AirlineManagementSystem
         //Reads airlines.csv
         public static void LoadAirlines()
         {
-            using (StreamReader sr = new StreamReader(Constants.AirlinesFile))
+            try
             {
-                string line;
-                sr.ReadLine(); // Skip Header
-                while ((line = sr.ReadLine()) != null)
+                using (StreamReader sr = new StreamReader(Constants.AirlinesFile))
                 {
-                    List<string> record = new List<string>(line.Split(','));
-                    Airline newAirline = new Airline();
-                    newAirline.ICAOCode = record[0];
-                    newAirline.Name = record[1];
-                    newAirline.RegistrationCountry = record[2];
-                    newAirline.ContactInfo = record[3];
+                    string line;
+                    sr.ReadLine(); // Skip Header
+                    while ((line = sr.ReadLine()) != null)
+                    {
+                        List<string> record = new List<string>(line.Split(','));
+                        Airline newAirline = new Airline();
+                        newAirline.ICAOCode = record[0];
+                        newAirline.Name = record[1];
+                        newAirline.RegistrationCountry = record[2];
+                        newAirline.ContactInfo = record[3];
 
-                    //Store Flight
-                    DataStore.Airlines[newAirline.ICAOCode] = newAirline;
+                        //Store Flight
+                        DataStore.Airlines[newAirline.ICAOCode] = newAirline;
+                    }
                 }
+
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\nAn unexpected error occurred:");
+                Console.WriteLine(ex.Message);
+                Console.ResetColor();
+
+                Console.WriteLine("\nPress Enter to continue...");
+                Console.ReadLine();
             }
         }
 
@@ -671,23 +685,36 @@ namespace AirlineManagementSystem
         // Save Airlines
         public static void SaveAirlines()
         {
-            string tempFile = Constants.AirlinesFile + ".tmp";
-
-            using (StreamWriter sw = new StreamWriter(tempFile))
+            try
             {
-                sw.WriteLine("ICAOCode,Name,RegistrationCountry,ContactInfo");
+                string tempFile = Constants.AirlinesFile + ".tmp";
 
-                foreach (var x in DataStore.Airlines)
+                using (StreamWriter sw = new StreamWriter(tempFile))
                 {
-                    Airline a = x.Value;
-                    sw.WriteLine($"{a.ICAOCode}," +
-                                 $"{a.Name}," +
-                                 $"{a.RegistrationCountry}," +
-                                 $"{a.ContactInfo}");
-                }
-            }
+                    sw.WriteLine("ICAOCode,Name,RegistrationCountry,ContactInfo");
 
-            File.Replace(tempFile, Constants.AirlinesFile, null);
+                    foreach (var x in DataStore.Airlines)
+                    {
+                        Airline a = x.Value;
+                        sw.WriteLine($"{a.ICAOCode}," +
+                                     $"{a.Name}," +
+                                     $"{a.RegistrationCountry}," +
+                                     $"{a.ContactInfo}");
+                    }
+                }
+
+                File.Replace(tempFile, Constants.AirlinesFile, null);
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\nAn unexpected error occurred:");
+                Console.WriteLine(ex.Message);
+                Console.ResetColor();
+
+                Console.WriteLine("\nPress Enter to continue...");
+                Console.ReadLine();
+            }
         }
 
         // Save Aircrafts
