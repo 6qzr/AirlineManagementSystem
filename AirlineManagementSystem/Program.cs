@@ -304,27 +304,40 @@ namespace AirlineManagementSystem
         //Reads aircrafts.csv
         public static void LoadAircrafts()
         {
-            using (StreamReader sr = new StreamReader(Constants.AircraftsFile))
+            try
             {
-                string line;
-                sr.ReadLine(); // Skip Header
-                while ((line = sr.ReadLine()) != null)
+                using (StreamReader sr = new StreamReader(Constants.AircraftsFile))
                 {
-                    List<string> record = new List<string>(line.Split(','));
-                    Aircraft newAircraft = new Aircraft();
-                    newAircraft.RegistrationNumber = record[0];
-                    newAircraft.AirlineICAO = record[1];
-                    newAircraft.Model = record[2];
-                    newAircraft.Manufacturer = record[3];
-                    newAircraft.TotalSeats = Convert.ToInt32(record[4]);
-                    newAircraft.BusinessSeats = Convert.ToInt32(record[5]);
-                    newAircraft.EconomySeats = Convert.ToInt32(record[6]);
-                    newAircraft.ManufacturingYear = Convert.ToInt32(record[7]);
-                    newAircraft.Status = Enum.Parse<AircraftStatus>(record[8]);
+                    string line;
+                    sr.ReadLine(); // Skip Header
+                    while ((line = sr.ReadLine()) != null)
+                    {
+                        List<string> record = new List<string>(line.Split(','));
+                        Aircraft newAircraft = new Aircraft();
+                        newAircraft.RegistrationNumber = record[0];
+                        newAircraft.AirlineICAO = record[1];
+                        newAircraft.Model = record[2];
+                        newAircraft.Manufacturer = record[3];
+                        newAircraft.TotalSeats = Convert.ToInt32(record[4]);
+                        newAircraft.BusinessSeats = Convert.ToInt32(record[5]);
+                        newAircraft.EconomySeats = Convert.ToInt32(record[6]);
+                        newAircraft.ManufacturingYear = Convert.ToInt32(record[7]);
+                        newAircraft.Status = Enum.Parse<AircraftStatus>(record[8]);
 
-                    //Store Flight
-                    DataStore.Aircrafts[newAircraft.RegistrationNumber] = newAircraft;
+                        //Store Flight
+                        DataStore.Aircrafts[newAircraft.RegistrationNumber] = newAircraft;
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\nAn unexpected error occurred:");
+                Console.WriteLine(ex.Message);
+                Console.ResetColor();
+
+                Console.WriteLine("\nPress Enter to continue...");
+                Console.ReadLine();
             }
         }
 
@@ -655,28 +668,41 @@ namespace AirlineManagementSystem
         // Save Aircrafts
         public static void SaveAircrafts()
         {
-            string tempFile = Constants.AircraftsFile + ".tmp";
-
-            using (StreamWriter sw = new StreamWriter(tempFile))
+            try
             {
-                sw.WriteLine("RegistrationNumber,AirlineICAO,Model,Manufacturer,TotalSeats,BusinessSeats,EconomySeats,ManufacturingYear,Status");
+                string tempFile = Constants.AircraftsFile + ".tmp";
 
-                foreach (var x in DataStore.Aircrafts)
+                using (StreamWriter sw = new StreamWriter(tempFile))
                 {
-                    Aircraft a = x.Value;
-                    sw.WriteLine($"{a.RegistrationNumber}," +
-                                 $"{a.AirlineICAO}," +
-                                 $"{a.Model}," +
-                                 $"{a.Manufacturer}," +
-                                 $"{a.TotalSeats}," +
-                                 $"{a.BusinessSeats}," +
-                                 $"{a.EconomySeats}," +
-                                 $"{a.ManufacturingYear}," +
-                                 $"{a.Status}");
-                }
-            }
+                    sw.WriteLine("RegistrationNumber,AirlineICAO,Model,Manufacturer,TotalSeats,BusinessSeats,EconomySeats,ManufacturingYear,Status");
 
-            File.Replace(tempFile, Constants.AircraftsFile, null);
+                    foreach (var x in DataStore.Aircrafts)
+                    {
+                        Aircraft a = x.Value;
+                        sw.WriteLine($"{a.RegistrationNumber}," +
+                                     $"{a.AirlineICAO}," +
+                                     $"{a.Model}," +
+                                     $"{a.Manufacturer}," +
+                                     $"{a.TotalSeats}," +
+                                     $"{a.BusinessSeats}," +
+                                     $"{a.EconomySeats}," +
+                                     $"{a.ManufacturingYear}," +
+                                     $"{a.Status}");
+                    }
+                }
+
+                File.Replace(tempFile, Constants.AircraftsFile, null);
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\nAn unexpected error occurred:");
+                Console.WriteLine(ex.Message);
+                Console.ResetColor();
+
+                Console.WriteLine("\nPress Enter to continue...");
+                Console.ReadLine();
+            }
         }
 
         // Save Flights
