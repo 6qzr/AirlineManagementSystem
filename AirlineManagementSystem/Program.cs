@@ -259,23 +259,36 @@ namespace AirlineManagementSystem
         //Reads airports.csv
         public static void LoadAirports()
         {
-            using (StreamReader sr = new StreamReader(Constants.AirportsFile))
+            try
             {
-                string line;
-                sr.ReadLine(); // Skip Header
-                while ((line = sr.ReadLine()) != null)
+                using (StreamReader sr = new StreamReader(Constants.AirportsFile))
                 {
-                    List<string> record = new List<string>(line.Split(','));
-                    Airport newAirport = new Airport();
-                    newAirport.IATACode = record[0];
-                    newAirport.FullName = record[1];
-                    newAirport.City = record[2];
-                    newAirport.Country = record[3];
-                    newAirport.TimeZoneOffset = float.Parse(record[4]);
+                    string line;
+                    sr.ReadLine(); // Skip Header
+                    while ((line = sr.ReadLine()) != null)
+                    {
+                        List<string> record = new List<string>(line.Split(','));
+                        Airport newAirport = new Airport();
+                        newAirport.IATACode = record[0];
+                        newAirport.FullName = record[1];
+                        newAirport.City = record[2];
+                        newAirport.Country = record[3];
+                        newAirport.TimeZoneOffset = float.Parse(record[4]);
 
-                    //Store Flight
-                    DataStore.Airports[newAirport.IATACode] = newAirport;
+                        //Store Flight
+                        DataStore.Airports[newAirport.IATACode] = newAirport;
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\nAn unexpected error occurred:");
+                Console.WriteLine(ex.Message);
+                Console.ResetColor();
+
+                Console.WriteLine("\nPress Enter to continue...");
+                Console.ReadLine();
             }
         }
 
@@ -620,27 +633,39 @@ namespace AirlineManagementSystem
         // Save Airports
         public static void SaveAirports()
         {
-            string tempFile = Constants.AirportsFile + ".tmp";
-
-            using (StreamWriter sw = new StreamWriter(tempFile))
+            try
             {
-                // Write Header
-                sw.WriteLine("IATACode,FullName,City,Country,TimeZoneOffset");
+                string tempFile = Constants.AirportsFile + ".tmp";
 
-                // Loop through DataStore and write each record
-                foreach (var x in DataStore.Airports)
+                using (StreamWriter sw = new StreamWriter(tempFile))
                 {
-                    Airport f = x.Value;
-                    sw.WriteLine($"{f.IATACode}," +
-                                 $"{f.FullName}," +
-                                 $"{f.City}," +
-                                 $"{f.Country}," +
-                                 $"{f.TimeZoneOffset}");
+                    // Write Header
+                    sw.WriteLine("IATACode,FullName,City,Country,TimeZoneOffset");
+
+                    // Loop through DataStore and write each record
+                    foreach (var x in DataStore.Airports)
+                    {
+                        Airport f = x.Value;
+                        sw.WriteLine($"{f.IATACode}," +
+                                     $"{f.FullName}," +
+                                     $"{f.City}," +
+                                     $"{f.Country}," +
+                                     $"{f.TimeZoneOffset}");
+                    }
                 }
+
+                File.Replace(tempFile, Constants.AirportsFile, null);
             }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("\nAn unexpected error occurred:");
+                Console.WriteLine(ex.Message);
+                Console.ResetColor();
 
-            File.Replace(tempFile, Constants.AirportsFile, null);
-
+                Console.WriteLine("\nPress Enter to continue...");
+                Console.ReadLine();
+            }
         }
 
         // Save Airlines
